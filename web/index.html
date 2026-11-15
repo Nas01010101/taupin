@@ -7,7 +7,7 @@
 <meta name="description" content="Identify a soil insect from a photo, see when to set bait traps from NASA POWER soil temperature, and compare four crop rotations on soil loss, water, nitrogen and pests with NASA GPM rain and SMAP soil moisture.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#15160f">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' data: blob: https://power.larc.nasa.gov; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' data: blob: https://power.larc.nasa.gov https://rest.isric.org; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="nasa.css">
 <script type="importmap">{"imports": {"three": "./vendor/three/three.module.js", "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"}}</script>
+<script type="module" src="js/i18n.js"></script>
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -42,6 +43,7 @@
   <p class="tag">Wireworm scouting for a Quebec field, before you buy coated seed</p>
   <p id="model-status" class="status" role="status" data-status="loading">Loading the photo check…</p>
   <button id="theme" type="button" class="ghost" aria-label="Switch between light and dark theme">Theme</button>
+  <button id="lang" type="button" class="ghost" aria-label="Language / Langue">FR / EN</button>
 </header>
 <p id="fatal" class="bad" hidden></p>
 <nav class="flow" aria-labelledby="h-flow">
@@ -151,10 +153,13 @@
       <h2 id="h-risk">6. What to plant: seven rotations for soil, water and pests</h2>
       <p class="lede">Tick what matters on this farm and mark the rotation you run now. The others are ranked and compared with it.</p>
       <div id="sw-controls"></div>
+      <div id="sw-build"></div>
       <div id="sw-notes"></div>
       <div class="table-wrap" id="sw-table"></div>
       <div id="sw-cards" class="rots"></div>
       <details class="how"><summary>How the soil and water columns are computed</summary><div id="sw-how"></div></details>
+      <h3>Soil organic matter</h3>
+      <div id="organic" aria-live="polite"></div>
       <h3>Pest level per year</h3>
       <p class="small muted">Wireworm and rootworm level per year for each rotation. Select a year for its reasons.</p>
       <div class="zones" role="group" aria-label="Zone">

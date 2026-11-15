@@ -37,13 +37,18 @@ export function effectFor(d) {
 
 const LEVEL_RANK = { NONE: -1, LOW: 0, MODERATE: 1, HIGH: 2 };
 
-// evidence: list of effectFor() results for confirmed photos. Returns the table the panel draws.
-export function riskView(risk, zone, evidence = []) {
-  const z = risk.zones[zone], base = z.scenarios.baseline, trap = z.scenarios.trap_threshold;
+// evidence: list of effectFor() results for confirmed photos. extra: the farmer's own rotations,
+// {id: {name, scenarios: {baseline, trap_threshold}}} from engine.scenariosFor(), listed after the
+// presets. Returns the table the panel draws.
+export function riskView(risk, zone, evidence = [], extra = {}) {
+  const z = risk.zones[zone];
+  const base = { ...z.scenarios.baseline, ...Object.fromEntries(Object.entries(extra).map(([id, e]) => [id, e.scenarios.baseline])) };
+  const trap = { ...z.scenarios.trap_threshold, ...Object.fromEntries(Object.entries(extra).map(([id, e]) => [id, e.scenarios.trap_threshold])) };
   const ww = evidence.some(e => e.kind === 'wireworm'), crw = evidence.some(e => e.kind === 'rootworm');
   const rows = Object.keys(base).map(rk => ({
     rotation: rk,
-    name: ROTATION_NAMES[rk] ?? rk,
+    name: extra[rk]?.name ?? ROTATION_NAMES[rk] ?? rk,
+    custom: rk in extra,
     years: base[rk].map((r, i) => {
       const t = trap[rk][i];
       const ifTrap = ww && (t.wireworm !== r.wireworm || t.prescription_supportable !== r.prescription_supportable)

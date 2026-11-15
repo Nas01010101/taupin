@@ -82,9 +82,15 @@ def risk_matrix(history: dict | None = None) -> dict:
         label = z["label"] + (f"; earlier crops from the field's crop history, {history['years'][0]} to "
                               f"{history['years'][1]}" if history else "")
         out[zk] = {"label": label, "dominant_genus": fld.dominant_genus, "trap_threshold": thr,
-                   "scenarios": scen}
+                   "field": asdict(fld), "scenarios": scen}
+    # The rule constants and the start (prior crops, years since sod) travel with the matrix, so the
+    # page's port of the engine (web/js/engine.js) scores the farmer's own rotations, and a crop
+    # history the farmer enters, from the same values as this file.
+    rules = {"grass": sorted(engine.GRASS), "prescription_crops": sorted(engine.PRESCRIPTION_CROPS),
+             "trap_threshold": engine.TRAP_THRESHOLD, "levels": engine.LEVELS,
+             "default_prior": list(prior), "default_years_since_sod": since}
     res = {"start_year": START_YEAR, "rotations": {k: v for k, v in engine.ROTATIONS.items()},
-           "zones": out, "sources": engine.SRC}
+           "zones": out, "rules": rules, "sources": engine.SRC}
     if history:
         res["history"] = history
     return res

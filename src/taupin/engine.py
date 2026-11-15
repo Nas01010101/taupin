@@ -84,7 +84,12 @@ def crw_level(crop, history):
     return level, [f"CRW: {run} prior corn year(s) -> {level} [{SRC['MAPAQ_CRW']}]"]
 
 
-def plan_rotation(crops, fld, start_year=2026, years_since_sod=1, prior=("sod", "sod", "sod"), traps=None):
+# What the field was before the plan starts: three sod years (the demo square is a regrown meadow).
+DEFAULT_PRIOR = ("sod", "sod", "sod")
+DEFAULT_YEARS_SINCE_SOD = 1
+
+
+def plan_rotation(crops, fld, start_year=2026, years_since_sod=DEFAULT_YEARS_SINCE_SOD, prior=DEFAULT_PRIOR, traps=None):
     """Score each year of a rotation. `traps` maps year -> observed mean larvae/trap (optional)."""
     traps = traps or {}
     history, out = list(prior), []

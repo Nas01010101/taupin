@@ -6,6 +6,8 @@ import { VIEWS } from './layers.js';
 import { loadModel, classifyPixels } from './model.js';
 import { effectFor, riskView, trapWindow, trapPlan, ROTATION_NAMES } from './risk.js';
 import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
+import * as custom from './custom.js';
+import { makeRules, scenariosFor } from './engine.js';
 import * as sw from './swui.js';
 import { fieldRanking } from './fieldrisk.js';
 import { parseCoords, coordText, fetchField } from './power.js';
@@ -17,12 +19,13 @@ import * as memoryui from './memoryui.js';
 import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
 import { nearest, startField, km } from './fields.js';
+import * as organic from './organic.js';
 
 const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
 const PIN = { wireworm: 0xe3a93f, rootworm: 0xb3361f, beneficial: 0x4f9a5a, none: 0x8a8f8c, unscored: 0x8a8f8c, unclear: 0xf2f2f2 };
 
-const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, zone: 'upland', sel: null, rankYear: null, forage: 0, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
+const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, custom: [], draft: [], zone: 'upland', sel: null, rankYear: null, forage: 0, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
 let D, scene, mn;
 
 // The count sheet lives in this browser only (localStorage); nothing is sent anywhere.
@@ -126,17 +129,40 @@ function climNow() {
   return climCache.get(D.weather);
 }
 
+// The farmer's own rotations (web/js/custom.js), scored by the browser port of the engine; one
+// computation per zone and sequence.
+let rules = null;
+const scenCache = new Map();
+function extraNow(zone) {
+  return Object.fromEntries(state.custom.map(r => {
+    const k = `${zone}|${r.crops.join()}`;
+    if (!scenCache.has(k)) scenCache.set(k, scenariosFor(D.risk, rules, zone, r.crops));
+    return [r.id, { name: r.name, scenarios: scenCache.get(k) }];
+  }));
+}
+const seqOf = id => D.risk.rotations[id] ?? state.custom.find(r => r.id === id)?.crops;
+const allNames = () => ({ ...Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id])),
+  ...Object.fromEntries(state.custom.map(r => [r.id, `${r.name} (yours)`])) });
+function renderControls() { $('#sw-controls').innerHTML = sw.controlsHTML({ names: allNames(), ...state.sw }); }
+function renderBuilder(status = '') {
+  $('#sw-build').innerHTML = sw.builderHTML({ startYear: D.risk.start_year, crops: custom.pickable(D.crops), draft: state.draft, customs: state.custom,
+    presets: Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, { name: ROTATION_NAMES[id] ?? id }])), max: custom.MAX_CUSTOM, status });
+}
+
 function renderSoilWater(view) {
   const clim = climNow(), o = state.sw, ids = view.rows.map(r => r.rotation);
-  const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(D.risk.rotations[r.rotation], clim ?? { crops: {} }, D.crops, r, o.tillage)]));
+  const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(seqOf(r.rotation), clim ?? { crops: {} }, D.crops, r, o.tillage)]));
   const rots = ids.map(id => ({ id, metrics: byId[id] })), fx = memory.noteEffects(state.notes);
   const ranked = rank(rots, o.chosen, fx.weights);
-  const names = Object.fromEntries(ids.map(id => [id, ROTATION_NAMES[id] ?? id]));
+  const names = Object.fromEntries(view.rows.map(r => [r.rotation, r.custom ? `${r.name} (yours)` : r.name]));
+  const texts = { ...D.rotations.rotations, ...Object.fromEntries(view.rows.filter(r => r.custom)
+    .map(r => [r.rotation, custom.customText(state.custom.find(c => c.id === r.rotation), r, D.crops)])) };
+  const sequences = Object.fromEntries(ids.map(id => [id, seqOf(id)]));
   // What the notes did: score and rank of each rotation with and without the note weights.
   const impact = fx.weights.soil ? memory.notesImpact(rots, o.chosen, fx.weights) : [];
   $('#sw-notes').innerHTML = memoryui.impactHTML({ fx, chosen: o.chosen, impact, names, cover: Object.fromEntries(ids.map(id => [id, byId[id].total.c])) });
   $('#sw-table').innerHTML = sw.tableHTML(ranked, byId, names, o.current, impact.length && o.chosen.includes('soil') ? Object.fromEntries(impact.map(r => [r.id, r])) : null);
-  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts: D.rotations.rotations, current: o.current, cropData: D.crops, sequences: D.risk.rotations, chosen: o.chosen });
+  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen });
   $('#sw-how').innerHTML = sw.climateHTML(clim, D.crops, D.weather, state.own ? coordText(state.own) : D.field.site.name);
 }
 
@@ -160,8 +186,38 @@ function renderRank() {
   $('#record').textContent = recordNow();
 }
 
+// SoilGrids for the parcel centre, or the farmer's own point; one request per 100 m position.
+const sgCache = new Map();
+function loadOrganic() {
+  const at = state.own ?? D.field.site, key = `${Number(at.lat).toFixed(3)},${Number(at.lon).toFixed(3)}`;
+  state.sgKey = key;
+  let hit = sgCache.get(key);
+  if (!hit) try { const sg = JSON.parse(localStorage.getItem(`taupin-sg-${key}`)); if (sg) sgCache.set(key, hit = { sg, status: '' }); } catch { /* storage blocked */ }
+  if (hit) { state.sg = hit.sg; state.sgStatus = hit.status; return; }
+  state.sg = null; state.sgStatus = 'Asking SoilGrids for organic carbon…';
+  sgCache.set(key, { sg: null, status: state.sgStatus });
+  organic.fetchSoilgrids(Number(at.lat), Number(at.lon))
+    .then(sg => ({ sg, status: sg ? '' : 'SoilGrids has no value here (water or built-up land).' }))
+    .catch(() => ({ sg: null, status: 'SoilGrids did not answer; the soil survey values stand.' }))
+    .then(r => {
+      sgCache.set(key, r);
+      if (r.sg) try { localStorage.setItem(`taupin-sg-${key}`, JSON.stringify(r.sg)); } catch { /* storage blocked */ }
+      if (state.sgKey === key) renderPanel();
+    });
+}
+
 function renderPanel() {
-  const view = riskView(D.risk, state.zone, state.evidence);
+  loadOrganic();
+  // A measured organic matter value picks the engine's soil case (the RAP factor is OM > 10 %).
+  // The baked survey describes this parcel; a point more than 1 km away gets SoilGrids only.
+  const here = !state.own || (D.fieldId && km(state.own, D.field.site) < 1);
+  const org = here ? D.field.organic : null, units = here ? D.field.layers.find(l => l.key === 'soil')?.classes : [];
+  const om = organic.zoneOM(org, state.zone, state.sg);
+  // The farmer's own rotations are scored in the same engine zone as the presets.
+  const rz = organic.riskZone(state.zone, om);
+  const view = riskView(D.risk, rz, state.evidence, extraNow(rz));
+  view.label = organic.zoneLabel(state.zone, om) ?? view.label;
+  $('#organic').innerHTML = organic.organicHTML(org, units, state.sg, { status: state.sgStatus, where: here ? 'the parcel centre' : `your point ${coordText(state.own)}` });
   $('#zone-upland').setAttribute('aria-pressed', state.zone === 'upland');
   $('#zone-pocket').setAttribute('aria-pressed', state.zone === 'pocket');
   $('#risk-summary').innerHTML = ui.riskSummaryHTML(view);
@@ -438,6 +494,30 @@ function bind() {
     state.sw.current = $('#sw-current').value; state.sw.tillage = $('#sw-tillage').value;
     renderPanel();
   });
+  $('#sw-build').addEventListener('change', e => {
+    const y = e.target.closest('[data-build-year]');
+    if (y) { state.draft[Number(y.dataset.buildYear)] = y.value; return; }
+    if (e.target.matches('[data-build-from]') && seqOf(e.target.value)) { state.draft = [...seqOf(e.target.value)]; renderBuilder(); }
+  });
+  $('#sw-build').addEventListener('click', e => {
+    if (e.target.closest('[data-build-add]')) {
+      const r = custom.addCustom(state.custom, state.draft, $('#build-name').value, D.crops);
+      if (r.error) { $('#build-status').textContent = custom.ERRORS[r.error]; return; }
+      state.custom = r.list;
+      const kept = DEMO_RUN || custom.saveCustom(localStorage, state.custom);
+      renderControls();
+      renderBuilder(kept ? `Added "${r.list[r.list.length - 1].name}": it is in the table and the cards below.` : 'Added for this visit only: this browser blocks storage.');
+      renderPanel();
+      return;
+    }
+    const rm = e.target.closest('[data-build-remove]');
+    if (rm) {
+      state.custom = custom.removeCustom(state.custom, rm.dataset.buildRemove);
+      if (state.sw.current === rm.dataset.buildRemove) state.sw.current = state.sw.defaultCurrent;
+      if (!DEMO_RUN) custom.saveCustom(localStorage, state.custom);
+      renderControls(); renderBuilder('Removed.'); renderPanel();
+    }
+  });
   $('#show-pocket').addEventListener('change', e => scene.setPocket(e.target.checked));
   $('#layer').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) showLayer(b.dataset.view); });
   $('#mapnote').addEventListener('click', e => mn.onClick(e));
@@ -474,11 +554,16 @@ async function main() {
   state.sw.current = rotations.default_current in risk.rotations ? rotations.default_current : Object.keys(risk.rotations)[0];
   // A baked field brings its crop history: the rotation it follows and its grass/forage years.
   if (field.crops?.rotation in risk.rotations) state.sw.current = field.crops.rotation;
+  state.sw.defaultCurrent = state.sw.current;
+  rules = makeRules(risk);
+  state.custom = DEMO_RUN ? [] : custom.loadCustom(localStorage, crops);
+  state.draft = [...risk.rotations[state.sw.current]];
   if (field.crops) { state.forage = field.crops.forage_years_last5; $('#rank-forage').value = state.forage; }
   $('#fields').innerHTML = [...fields, { id: 'demo', name: 'Demo park (Bois-de-Liesse)' }].map(f =>
     `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? 'demo')}">${ui.esc(f.name)}</button>`).join('');
   $('#crop-hist').innerHTML = ui.cropHistHTML(field.crops, ROTATION_NAMES);
-  $('#sw-controls').innerHTML = sw.controlsHTML({ names: Object.fromEntries(Object.keys(risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id])), ...state.sw });
+  renderControls();
+  renderBuilder();
   $('#smap').innerHTML = sw.smapHTML(smap, weather);
   scene = createScene($('#field'), field, base);
   mn = createMapNotes({ el: $('#mapnote'), state, scene, data: () => D, zoneOf, store, items: itemsNow, remove: removeEntry,

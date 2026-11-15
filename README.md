@@ -107,6 +107,15 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   matters and the rotations are ranked on those. Each rotation card gives why it is there, the
   evidence, gains and losses against the current rotation, the information gaps and the risks. A
   value with no source shows as ? and is never counted as zero.
+- **Your own rotation.** Under "Build your own rotation" the farmer picks a crop for each year, from
+  the crops that have sourced values in `web/data/crops.json` (a crop added there becomes pickable),
+  and adds up to three rotations, kept in the browser only. They join the table, the cards and the
+  "current rotation" choice. Their pest levels come from `web/js/engine.js`, a line-for-line port of
+  `src/taupin/engine.py` that reads the rule constants from `risk.json`; `web/test/engine.test.mjs`
+  checks it against every preset of `risk.json`, every 5-year sequence of the four crops and 80
+  seeded cases with traces (`python -m taupin.engine_parity` writes the fixture). Their card text is
+  written from the engine rules that applied, each with its source. Like the presets, the field is
+  taken as three sod years before 2026.
 - **Hand over.** Trap points as GPX, CSV and GeoJSON, and a text record with the trap date, the
   counts, the ranking and the photos, for the agronomist. Taupin never decides the prescription.
   The agronomist signs.
@@ -288,6 +297,11 @@ Gallery photos (Wikimedia Commons):
   field's pest table (`python -m taupin.bake --fields` writes `web/data/fields/<id>/risk.json`); the
   soil zones (organic matter 5 % and 12 %) are still the park's scenario. The IRDA soil map used covers sheet 31H12
   only, and HRDEM lidar has holes between projects (no coverage at Calumet).
+- Soil organic matter is the surface-layer organic carbon of each CanSIS soil component times
+  1.724 (van Bemmelen), one value per 1950s soil map unit; the true ratio runs to about 2.0, so it
+  is a lower estimate. SoilGrids 2.0 (250 m) is queried live as a second value and for fields
+  outside the baked set; it allows about 5 calls a minute and can time out. A lab test replaces both.
+  The pest engine reads organic matter only through the RAP factor "over 10 %".
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.
 - Not a NASA product. Uses NASA open data.
