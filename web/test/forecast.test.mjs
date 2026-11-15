@@ -72,3 +72,22 @@ test('trap calendar from the demo forecast has real dates', async () => {
   const p = trapPlan(trapForecast(soil, 2026).trap_12C.rows[0]);
   for (const d of [p.earliest, p.install, p.latest, ...p.counts]) assert.match(d, /^\d{1,2} (Apr|May|Jun|Jul)$/);
 });
+
+import { rangeCheck } from '../js/forecast.js';
+import { trapHTML } from '../js/ui.js';
+import { trapWindow } from '../js/risk.js';
+
+test('rangeCheck tests each miss against the range from the misses before it only', () => {
+  // Ranges from [0,1,2,3,4] (0.4..3.6) and then [0..5] (0.5..4.5): 5 is outside, 2 is inside.
+  assert.deepEqual(rangeCheck([0, 1, 2, 3, 4, 5, 2]), { inside: 1, n: 2 });
+  assert.deepEqual(rangeCheck([1, 2, 3]), { inside: 0, n: 0 });   // fewer than 5 earlier misses
+});
+
+test('demo field: the trap-date range holds on misses it was not built from, close to its 80 %', () => {
+  const t = trapForecast(soil, 2026).trap_12C;
+  assert.deepEqual([t.check.inside, t.check.n], [61, 70]);
+  assert.deepEqual(t.check.byHorizon.map(c => `${c.inside}/${c.n}`), ['16/16', '12/15', '12/14', '11/13', '10/12']);
+  const share = t.check.inside / t.check.n;
+  assert.ok(share >= 0.7 && share <= 0.9, `held ${share}`);   // the bar in docs/PREDICTIONS.md
+  assert.match(trapHTML(trapWindow(soil, 2026), soil, []), /the range held 61 of 70 times \(87 %\)/);
+});

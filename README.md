@@ -196,7 +196,10 @@ years, mean of the last 10, straight-line trend, average of the two). Each one i
 rolling-origin backtest (fit on the years up to t, predict t + 1 to t + 5), the lowest error is
 used, and the 80 % range is the 10th to 90th percentile of that model's own backtest misses. On
 the demo field (POWER TSOIL1 1995-2025) the mean wins: trap date miss 6.9 days against 8.4 for the
-trend, rootworm hatch 3.8 against 4.2. No weather forecast is used.
+trend, rootworm hatch 3.8 against 4.2. The range comes from the same misses that picked the model,
+so it is also checked on misses it was not built from (`rangeCheck`: each miss against the range
+made from the earlier ones): on the demo field the trap-date range held 61 of 70 times (87 %).
+No weather forecast is used.
 
 Tests: `uv run pytest` (engine, soil, bake, classifier parity, server, web checks) and
 `node --test web/test/*.test.mjs` (preprocessing, softmax, abstain, risk view, renderers). The
