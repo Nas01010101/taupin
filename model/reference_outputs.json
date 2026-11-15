@@ -1,0 +1,98 @@
+{
+ "classes": [
+  "wireworm",
+  "click_beetle",
+  "corn_rootworm",
+  "white_grub",
+  "ground_beetle",
+  "millipede",
+  "earthworm",
+  "other"
+ ],
+ "temperature": 0.6951426783992118,
+ "input_size": 224,
+ "mean": [
+  0.485,
+  0.456,
+  0.406
+ ],
+ "std": [
+  0.229,
+  0.224,
+  0.225
+ ],
+ "version": "v2-dinov2s",
+ "tolerance_note": "check the input first: input_first_pixel_rgb and input_mean_per_channel should match to about 1e-3, else the resize or crop differs. The int8 model's MatMulInteger kernels differ between onnxruntime CPU and wasm: logits within 0.27 and probabilities within 0.045 on the 24 samples, same top-1 (float32 builds agree to about 1e-4)",
+ "samples": [
+  {
+   "file": "data/samples/wireworm/709746252.jpg",
+   "true_class": "wireworm",
+   "logits": [
+    3.382343053817749,
+    -0.6590143442153931,
+    -0.6711422204971313,
+    -1.6684234142303467,
+    -0.6434194445610046,
+    -1.386821985244751,
+    -0.991287887096405,
+    1.6996936798095703
+   ],
+   "probs_after_temperature": [
+    0.9078992009162903,
+    0.002711288630962372,
+    0.002664396306499839,
+    0.0006346607115119696,
+    0.0027728017885237932,
+    0.0009516419959254563,
+    0.0016810710076242685,
+    0.08068495988845825
+   ],
+   "top1": "wireworm",
+   "input_first_pixel_rgb": [
+    2.0091617107391357,
+    2.1484594345092773,
+    2.6225709915161133
+   ],
+   "input_mean_per_channel": [
+    0.2852762043476105,
+    0.19624091684818268,
+    0.07327340543270111
+   ]
+  },
+  {
+   "file": "data/samples/click_beetle/759331695.jpg",
+   "true_class": "click_beetle",
+   "logits": [
+    -1.016520380973816,
+    2.992523193359375,
+    -1.6304446458816528,
+    -1.3259170055389404,
+    0.2393820434808731,
+    -0.8206176161766052,
+    -1.1067579984664917,
+    -0.9733233451843262
+   ],
+   "probs_after_temperature": [
+    0.003020587144419551,
+    0.9655279517173767,
+    0.0012489312794059515,
+    0.0019355036783963442,
+    0.018396014347672462,
+    0.004003894980996847,
+    0.0026528628077358007,
+    0.0032142437994480133
+   ],
+   "top1": "click_beetle",
+   "input_first_pixel_rgb": [
+    0.14256364107131958,
+    0.29271721839904785,
+    0.23477131128311157
+   ],
+   "input_mean_per_channel": [
+    -0.38283154368400574,
+    -0.2933550477027893,
+    -0.31277546286582947
+   ]
+  }
+ ]
+}
