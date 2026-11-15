@@ -69,12 +69,31 @@ def linear_trend(xs: list[float], ys: list[float]) -> tuple[float, float]:
 
 
 def doy(d: date) -> int:
-    return d.timetuple().tm_yday
+    """Day of year on a non-leap calendar: from 1 March on, a calendar date gets the same number in
+    every year (14 May is day 134 in 2024 as in 2025), so dates of different years can be averaged
+    and labelled with doy_label. January and February are the same in every year already."""
+    return d.timetuple().tm_yday if d.month < 3 else 60 + (d - date(d.year, 3, 1)).days
 
 
 def doy_label(day_of_year: float) -> str:
     """Day of year -> 'DD Mon' in a non-leap year."""
     return (date(2001, 1, 1) + timedelta(days=round(day_of_year) - 1)).strftime("%d %b")
+
+
+def date_stats(rows: dict) -> dict:
+    """Means of the yearly 12 C and 8 C dates and the trend of the 12 C date, from the per-year rows
+    ({year: {"trap_12C": iso, "larvae_8C": iso, ...}}). web/js/power.js liveSoil computes the same."""
+    ys = sorted(rows, key=int)
+    t12 = [doy(date.fromisoformat(rows[y]["trap_12C"])) for y in ys]
+    t8 = [doy(date.fromisoformat(rows[y]["larvae_8C"])) for y in ys]
+    slope, ci = linear_trend([float(y) for y in ys], [float(v) for v in t12])
+    mean12, mean8 = sum(t12) / len(t12), sum(t8) / len(t8)
+    return {
+        "trap_12C_mean_doy": round(mean12, 1), "trap_12C_mean": doy_label(mean12),
+        "larvae_8C_mean_doy": round(mean8, 1), "larvae_8C_mean": doy_label(mean8),
+        "trap_12C_trend_days_per_decade": round(10 * slope, 2),
+        "trap_12C_trend_95ci_days_per_decade": round(10 * ci, 2),
+    }
 
 
 def soil_summary(series, years: list[int], recent: list[int]) -> dict:
@@ -87,10 +106,6 @@ def soil_summary(series, years: list[int], recent: list[int]) -> dict:
         rows[y] = {"trap_12C": t12.isoformat(), "larvae_8C": t8.isoformat(),
                    "crw_hatch": crw.isoformat() if crw else None}
     ys = sorted(rows)
-    t12 = [doy(date.fromisoformat(rows[y]["trap_12C"])) for y in ys]
-    t8 = [doy(date.fromisoformat(rows[y]["larvae_8C"])) for y in ys]
-    slope, ci = linear_trend([float(y) for y in ys], [float(v) for v in t12])
-    mean12, mean8 = sum(t12) / len(t12), sum(t8) / len(t8)
     daily = {}
     for y in recent:
         pts = [(d, v) for d, v in series if d.year == y and date(y, 3, 1) <= d <= date(y, 7, 31)]
@@ -98,10 +113,7 @@ def soil_summary(series, years: list[int], recent: list[int]) -> dict:
     return {
         "years": [ys[0], ys[-1]],
         "thresholds_c": {"trap": TRAP_C, "larvae": LARVAE_C},
-        "trap_12C_mean_doy": round(mean12, 1), "trap_12C_mean": doy_label(mean12),
-        "larvae_8C_mean_doy": round(mean8, 1), "larvae_8C_mean": doy_label(mean8),
-        "trap_12C_trend_days_per_decade": round(10 * slope, 2),
-        "trap_12C_trend_95ci_days_per_decade": round(10 * ci, 2),
+        **date_stats(rows),
         "per_year": {str(y): rows[y] for y in ys},
         "daily": daily,
         "sources": {"tsoil": SRC["POWER"], "trap": SRC["RAP"], "crw": SRC["CRW"]},

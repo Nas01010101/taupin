@@ -48,3 +48,10 @@ def test_load_power_param_accepts_both_layouts(tmp_path):
     assert bake.load_power_param(api, "TSOIL1") == bake.load_power_param(flat, "TSOIL1")
     with pytest.raises(KeyError):
         bake.load_power_param(flat, "T2M")
+
+
+def test_committed_soil_json_date_stats_match_its_own_years():
+    # Means and trend in the file must be the ones soil.date_stats gives for its per-year dates.
+    from taupin import soil
+    s = json.loads((WEB_DATA / "soil.json").read_text())
+    assert {k: s[k] for k in soil.date_stats(s["per_year"])} == soil.date_stats(s["per_year"])

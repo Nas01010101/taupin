@@ -63,3 +63,17 @@ def test_summary_shape_and_sources():
 
 def test_doy_label():
     assert soil.doy_label(134.2) == "14 May"
+
+
+def test_doy_is_the_same_for_a_calendar_date_in_leap_years():
+    assert soil.doy(date(2024, 5, 14)) == soil.doy(date(2025, 5, 14)) == 134
+    assert soil.doy(date(2024, 3, 1)) == 60 and soil.doy(date(2024, 12, 31)) == 365
+    assert soil.doy(date(2024, 1, 31)) == 31 and soil.doy(date(2024, 2, 29)) == 60
+    assert soil.doy_label(soil.doy(date(2024, 5, 14))) == "14 May"
+
+
+def test_date_stats_same_calendar_date_every_year_has_no_spread():
+    rows = {y: {"trap_12C": f"{y}-05-14", "larvae_8C": f"{y}-04-29"} for y in range(2018, 2026)}
+    s = soil.date_stats(rows)
+    assert s["trap_12C_mean_doy"] == 134.0 and s["larvae_8C_mean_doy"] == 119.0   # leap years would add 0.25
+    assert s["trap_12C_trend_days_per_decade"] == 0.0 and s["trap_12C_trend_95ci_days_per_decade"] == 0.0
