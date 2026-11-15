@@ -55,3 +55,20 @@ test('a field whose data already has this year forecasts from the next year', ()
   const live = { per_year: { ...soil.per_year, 2026: soil.per_year[2025] } };
   assert.equal(trapForecast(live, 2026).trap_12C.rows[0].year, 2027);
 });
+
+test('trap calendar: ready by the early date, three counts a week apart, the count decides next year', async () => {
+  const { trapPlan } = await import('../js/risk.js');
+  assert.equal(trapPlan(null), null);
+  const p = trapPlan({ year: 2027, doy: [126, 134, 145] });   // day 134 of 2001 = 14 May
+  assert.equal(p.install, '14 May');
+  assert.equal(p.earliest, '6 May');
+  assert.deepEqual(p.counts, ['21 May', '28 May', '4 Jun']);
+  assert.equal(p.decides, 2028);
+});
+
+test('trap calendar from the demo forecast has real dates', async () => {
+  const { trapPlan } = await import('../js/risk.js');
+  const soil = JSON.parse(fs.readFileSync(new URL('../data/soil.json', import.meta.url)));
+  const p = trapPlan(trapForecast(soil, 2026).trap_12C.rows[0]);
+  for (const d of [p.earliest, p.install, p.latest, ...p.counts]) assert.match(d, /^\d{1,2} (Apr|May|Jun|Jul)$/);
+});

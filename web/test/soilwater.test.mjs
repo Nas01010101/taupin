@@ -60,14 +60,16 @@ test('rotation totals, ranking by priority, and benefits against the current rot
   assert.equal(byId.C_with_buckwheat.unknown.water, 1);
   assert.ok(byId.A_continuous_corn.total.pest > byId.B_corn_soy_wheat.total.pest);
   const all = rank(rows, ['pests', 'water', 'soil', 'nitrogen', 'organic']);
-  assert.equal(all.at(-1).id, 'C_with_buckwheat');   // gaps on water and nitrogen: ranked after the complete ones
+  // The two buckwheat plans have gaps on water and nitrogen: ranked after the complete ones.
+  assert.deepEqual(all.slice(-2).map(r => r.id).sort(), ['C_with_buckwheat', 'E_buckwheat_first']);
   assert.equal(all.at(-1).complete, false);
   const pestFirst = rank(rows, ['pests']);
   assert.notEqual(pestFirst[0].id, 'A_continuous_corn');
   assert.equal(pestFirst.at(-1).id, 'A_continuous_corn');
   const nFirst = rank(rows, ['nitrogen']);
   assert.equal(byId.C_with_buckwheat.total.n, null);   // buckwheat leaves no sourced N credit: the sum stays unknown
-  assert.deepEqual(nFirst.slice(-2).map(r => r.id), ['A_continuous_corn', 'C_with_buckwheat']);   // unknown ranks last
+  assert.deepEqual(nFirst.slice(-2).map(r => r.id).sort(), ['C_with_buckwheat', 'E_buckwheat_first']);   // unknown ranks last
+  assert.equal(nFirst.at(-3).id, 'A_continuous_corn');   // the highest known N bill
   assert.ok(nFirst.slice(0, -1).every((r, i) => i === 0 || r.score <= nFirst[i - 1].score));
   const b = versus(byId.B_corn_soy_wheat, byId.A_continuous_corn);
   assert.ok(b.some(x => x.good && /nitrogen/.test(x.text)));

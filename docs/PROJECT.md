@@ -189,7 +189,7 @@ The full table, with file paths and weak points, is in `docs/CHALLENGE_FIT.md`.
 
 ### Soil and water: what the rotation model leaves out
 
-The brief asks for soil health and water. Step 6 now scores four rotations on five priorities. The
+The brief asks for soil health and water. Step 6 now scores seven rotations on five priorities. The
 demo field on equal weights, fall plough, as `web/js/soilwater.js` computes them from
 `web/data/weather.json` (the tests check the nitrogen totals and the rank order):
 

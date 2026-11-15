@@ -181,10 +181,15 @@ export function createScene(container, field, base = 'data/') {
       ring.rotation.x = -Math.PI / 2; ring.position.y = 1; ring.renderOrder = 4; g.add(ring);
     }
     if (thumb) {
+      // Small framed card above the pin: at 70 units the 160 px photo covered the trap letters and
+      // looked pixelated when the camera zoomed in.
       const t = new THREE.TextureLoader().load(thumb); t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      const frame = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, depthTest: false }));
+      frame.scale.set(40, 40, 1); frame.position.y = 92; frame.renderOrder = 2;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false }));
-      sp.scale.set(70, 70, 1); sp.position.y = 110; sp.renderOrder = 2;
-      g.add(sp);
+      sp.scale.set(36, 36, 1); sp.position.y = 92; sp.renderOrder = 3;
+      g.add(frame, sp);
     }
     g.userData.cell = [row, col];
     g.userData.id = id;

@@ -73,8 +73,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             sys.stderr.write("%s %s\n" % (self.address_string(), fmt % args))
 
 
+class Server(http.server.ThreadingHTTPServer):
+    # The page loads about 30 JS modules at once; the default listen backlog of 5 made macOS reset
+    # the extra connections, and the app came up without its risk table.
+    request_queue_size = 128
+
+
 def make_server(port: int, host: str = "127.0.0.1") -> http.server.ThreadingHTTPServer:
-    return http.server.ThreadingHTTPServer((host, port), functools.partial(Handler, directory=str(WEB)))
+    return Server((host, port), functools.partial(Handler, directory=str(WEB)))
 
 
 def serve(port: int | None, open_browser: bool, demo: bool) -> None:

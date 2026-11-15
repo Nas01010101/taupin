@@ -104,4 +104,11 @@ ROTATIONS = {
     "B_corn_soy_wheat": ["corn", "soybean", "wheat", "corn", "soybean"],
     "C_with_buckwheat": ["corn", "buckwheat", "soybean", "wheat", "corn"],
     "D_corn_soy": ["corn", "soybean", "corn", "soybean", "corn"],
+    # Start with the broadleaf crops: after sod or a grass-heavy history, buckwheat then soybean
+    # keep corn out of the two years when wireworm pressure is highest.
+    "E_buckwheat_first": ["buckwheat", "soybean", "corn", "soybean", "wheat"],
+    # No grass crop in the corn slot: soybean and wheat in turn.
+    "F_soy_wheat": ["soybean", "wheat", "soybean", "wheat", "soybean"],
+    # Two corn years, then a legume and a small grain.
+    "G_corn_corn_soy_wheat": ["corn", "corn", "soybean", "wheat", "corn"],
 }

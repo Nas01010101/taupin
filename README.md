@@ -5,7 +5,7 @@
 Taupin helps a grain farmer in Canada or the US and their agronomist scout a field for wireworms before buying
 insecticide-coated seed. It dates the bait-trap week from NASA POWER soil temperature, places the
 traps on a 3D field built from lidar, NASA HLS, Landsat and the soil map, takes the counts, names a
-soil insect from a photo, and compares four crop rotations over five years for water, soil loss,
+soil insect from a photo, and compares seven crop rotations over five years for water, soil loss,
 nitrogen, crop residue and pests, with NASA GPM rain and SMAP soil moisture. It
 runs in the browser, offline; photos and counts never leave the device.
 
@@ -71,7 +71,9 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   prescription (Code de gestion des pesticides, D. 470-2025). The evidence for one field is a
   bait-trap count. In Labrie et al. 2020, 92.6 % of 68 corn fields stayed under 1 wireworm per trap.
 - **When to trap.** Bait traps go in when the top 10 cm of soil holds 12 °C. From NASA POWER
-  `TSOIL1`, 1995 to 2025: 14 May on average, 8 May in 2025.
+  `TSOIL1`, 1995 to 2025: 14 May on average, 8 May in 2025. The trap panel gives a calendar per
+  RAP's method: traps ready by the early date (6 May in 1 year out of 10), set at 12 °C, often at
+  seeding, three counts a week apart, and the count decides next season's seed.
 - **Where to trap.** A 600 m square drawn from 1 m lidar relief and canopy, NASA HLS vegetation,
   Landsat spring surface temperature and the soil map. Ten trap points, about 25 m apart, are
   spread over four scouting zones of those layers. The zones are not a risk map.
@@ -94,8 +96,10 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   photo's GPS if you choose that, only on that tap. Finds stay in the browser, show as pins on the
   field when they fall in the demo square, go into the agronomist record and export as CSV and
   GeoJSON. The latest find fills in the coordinates for "Your field". "Delete all finds" clears them.
-- **Plan.** Four rotations for 2026 to 2030: corn every year, corn and soybean (marked as current;
-  the farmer can mark another), corn-soybean-wheat, and a rotation with buckwheat. Each gets the
+- **Plan.** Seven rotations for 2026 to 2030: corn every year, corn and soybean (marked as current;
+  the farmer can mark another), corn-soybean-wheat, corn-buckwheat-soybean-wheat, buckwheat first
+  (corn in year 3, for a field coming out of hay), soybean-wheat with no corn, and two corn years
+  then soybean and wheat. Each gets the
   dry-year water shortfall (GPM IMERG rain against FAO-56 crop water need), heavy-rain days on bare
   soil, the USLE cover factor for the chosen tillage (OMAFRA 23-005), nitrogen to buy (CRAAQ, MAPAQ),
   crop residue returned (Lal 2005) and wireworm and corn rootworm levels. The farmer ticks what

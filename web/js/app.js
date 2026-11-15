@@ -4,7 +4,7 @@ import * as ort from '../vendor/ort/ort.wasm.min.mjs';
 import { createScene } from './scene.js';
 import { VIEWS } from './layers.js';
 import { loadModel, classifyPixels } from './model.js';
-import { effectFor, riskView, trapWindow, ROTATION_NAMES } from './risk.js';
+import { effectFor, riskView, trapWindow, trapPlan, ROTATION_NAMES } from './risk.js';
 import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
 import * as sw from './swui.js';
 import { fieldRanking } from './fieldrisk.js';
@@ -161,6 +161,7 @@ function renderPanel() {
   const tw = trapWindow(D.soil, D.risk.start_year), next = tw.fc.trap_12C?.rows[0];
   $('#h-trap').textContent = next ? `2. Trap week ${next.year}: set bait traps around ${next.date}` : `2. Trap week: set bait traps around ${tw.mean12}`;
   $('#trap-lede').textContent = `The week the top 10 cm of soil reaches 12 °C${next ? `, likely between ${next.lo} and ${next.hi}` : ''}. Forecast from NASA POWER, ${tw.span[0]}-${tw.span[1]}${state.own ? ` at ${coordText(state.own)}` : ''}.`;
+  tw.plan = trapPlan(next);
   $('#trap').innerHTML = ui.trapHTML(tw, D.soil, state.evidence);
   $('#evidence').innerHTML = ui.evidenceHTML(state.evidence);
   $('#result').innerHTML = ui.resultHTML(state.current);
@@ -175,7 +176,7 @@ async function pixelsOf(blob) {
   const c = new OffscreenCanvas(bmp.width, bmp.height), g = c.getContext('2d');
   g.drawImage(bmp, 0, 0);
   const data = g.getImageData(0, 0, bmp.width, bmp.height).data;
-  const t = document.createElement('canvas'), s = 160, k = s / Math.min(bmp.width, bmp.height);
+  const t = document.createElement('canvas'), s = 256, k = s / Math.min(bmp.width, bmp.height);
   t.width = t.height = s;
   t.getContext('2d').drawImage(bmp, (s - bmp.width * k) / 2, (s - bmp.height * k) / 2, bmp.width * k, bmp.height * k);
   return { data, w: bmp.width, h: bmp.height, thumb: t.toDataURL('image/jpeg', 0.85) };

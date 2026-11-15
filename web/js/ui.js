@@ -62,6 +62,14 @@ export function forecastHTML(fc) {
     `<thead><tr><th scope="col"></th>${head}</tr></thead><tbody>${row('Bait traps', t)}${row('Rootworm hatch', c)}</tbody></table></div>`;
 }
 
+function trapPlanHTML(p) {
+  if (!p) return '';
+  return `<ol class="plan"><li><strong>Have traps ready by ${esc(p.earliest)}.</strong> In 1 year out of 10 the soil reaches 12 °C that early. Probe the soil at 10 cm from then on.</li>` +
+    `<li><strong>Set traps when the probe reads 12 °C</strong>, most likely around ${esc(p.install)} (by ${esc(p.latest)} in 9 years out of 10). Seeding day is ideal: larvae come to germinating seed. On sand in a dry spring, wait for rain.</li>` +
+    `<li><strong>Count larvae per trap</strong> on ${p.counts.map(esc).join(', ')} (RAP: three counts 7 to 10 days apart).</li>` +
+    `<li><strong>The count decides the ${esc(p.decides)} seed.</strong> At or above the threshold, order coated seed for the field next spring; below it, untreated seed.</li></ol>`;
+}
+
 export function trapHTML(tw, soil, evidence) {
   const sign = tw.trend >= 0 ? '+' : '';
   const ww = evidence.some(e => e.kind === 'wireworm');
@@ -69,6 +77,7 @@ export function trapHTML(tw, soil, evidence) {
     `<dl class="facts"><div><dt>Bait traps</dt><dd>${esc(tw.mean12)}<span>${esc(tw.last12)} in ${esc(tw.lastYear)}</span></dd></div>` +
     `<div><dt>Larvae move up</dt><dd>${esc(tw.mean8)}<span>${esc(tw.last8)} in ${esc(tw.lastYear)}</span></dd></div>` +
     (tw.lastCrw ? `<div><dt>Rootworm hatch</dt><dd>${esc(tw.lastCrw)}<span>in ${esc(tw.lastYear)}</span></dd></div>` : '') + `</dl>` +
+    trapPlanHTML(tw.plan) +
     forecastHTML(tw.fc) +
     soilChartSVG(soil) +
     `<details class="more"><summary>Method and sources</summary><p>The trap date is the end of the first 7 days averaging 12 °C or more at 0-10 cm after 1 March. ` +

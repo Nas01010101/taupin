@@ -241,3 +241,7 @@ details.how summary { cursor: pointer; color: var(--accent); margin-bottom: var(
 .spark svg { width: 100%; height: auto; color: var(--accent); }
 .spark text { font-size: 10px; fill: var(--muted); }
 .spark figcaption { font-size: var(--t-xs); color: var(--muted); }
+
+/* Trap calendar (trapPlanHTML): numbered steps from "have traps ready" to "the count decides next year's seed". */
+.plan { margin: 12px 0 16px; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45; }
+.plan li::marker { font-weight: 700; }

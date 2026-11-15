@@ -9,6 +9,9 @@ export const ROTATION_NAMES = {
   B_corn_soy_wheat: 'Corn, soybean, wheat',
   C_with_buckwheat: 'With buckwheat',
   D_corn_soy: 'Corn and soybean',
+  E_buckwheat_first: 'Buckwheat first',
+  F_soy_wheat: 'Soybean and wheat, no corn',
+  G_corn_corn_soy_wheat: 'Two corn years, soybean, wheat',
 };
 export const CROP_SHORT = { soybean: 'soy', buckwheat: 'buckw.' };
 
@@ -76,9 +79,21 @@ export function trapForecast(soil, startYear, n = 5) {
     if (!ys.length) continue;
     const first = Math.max(startYear, ys[ys.length - 1] + 1), targets = Array.from({ length: n }, (_, i) => first + i);
     const f = forecast(ys, ys.map(y => doyOf(soil.per_year[y][k])), targets);
-    if (f) out[k] = { ...f, rows: f.rows.map(r => ({ year: r.year, date: label(r.value), lo: label(r.lo), hi: label(r.hi), n: r.n })) };
+    if (f) out[k] = { ...f, rows: f.rows.map(r => ({ year: r.year, date: label(r.value), lo: label(r.lo), hi: label(r.hi), n: r.n, doy: [r.lo, r.value, r.hi] })) };
   }
   return out;
+}
+
+// Trap calendar for one forecast year (RAP, Méthode standard de dépistage des VFF, 2025): traps go in
+// when the top 10 cm reaches 12 °C, often just after seeding; three counts 7 to 10 days apart; a
+// count at threshold calls for coated seed the next season, not this one.
+export function trapPlan(row) {
+  if (!row) return null;
+  const [lo, mid, hi] = row.doy;   // day of year: 10th percentile, forecast, 90th percentile
+  return {
+    year: row.year, earliest: label(lo), install: label(mid), latest: label(hi),
+    counts: [7, 14, 21].map(d => label(mid + d)), decides: row.year + 1,
+  };
 }
 
 export function trapWindow(soil, startYear) {
