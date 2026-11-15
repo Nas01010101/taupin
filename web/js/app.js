@@ -7,7 +7,7 @@ import { loadModel, classifyPixels } from './model.js';
 import { effectFor, riskView, trapWindow, trapPlan, ROTATION_NAMES } from './risk.js';
 import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
 import * as sw from './swui.js';
-import { fieldRanking } from './fieldrisk.js';
+import { fieldRanking, soilLightCheck, soilLightNote } from './fieldrisk.js';
 import { parseCoords, coordText, fetchField } from './power.js';
 import { formatAnswer, preprocess } from './classify.js';
 import * as scout from './scout.js';
@@ -41,7 +41,7 @@ state.notes = DEMO_RUN ? [] : memory.loadNotes(store);   // field notes stay on 
 const today = () => new Date().toLocaleDateString('en-CA');   // YYYY-MM-DD in local time
 
 // The demo square has no light soil; for another field the farmer ticks the box.
-const rankNow = () => fieldRanking(D.model, D.fieldRisk, { year: state.rankYear, forageYears: state.forage, lightSoil: state.own && state.light ? 1 : 0 });
+const rankNow = () => fieldRanking(D.model, D.fieldRisk, { year: state.rankYear, forageYears: state.forage, lightSoil: state.lightAsk && state.light ? 1 : 0 });
 
 function recordNow() {
   const r = rankNow();
@@ -81,8 +81,6 @@ function renderModelStatus() {
 
 // The soil map units under this parcel (Dorval clay loam and muck) are neither sand
 // nor sandy loam, so the model's light-soil input is 0 everywhere here.
-const LIGHT_SOIL_NOTE = 'Soil map units in this parcel are clay loam and muck, so the sand or sandy loam input is no everywhere and the rank is the same across the parcel.';
-
 const OWN_SOIL_NOTE = 'The app has no soil map for this place: tick the box if the field is sand or sandy loam.';
 const OWN_KEY = 'taupin-own', FIELD_KEY = 'taupin-field';   // FIELD_KEY: the last field picked here
 
@@ -101,7 +99,11 @@ function useField(own, note = '') {
   const years = Object.keys(D.fieldRisk.per_year).sort();
   state.rankYear = years[years.length - 1];
   $('#rank-year').innerHTML = years.map(y => `<option${y === state.rankYear ? ' selected' : ''}>${ui.esc(y)}</option>`).join('');
-  $('#rank-light-wrap').hidden = !own;
+  // The field's soil map answers "sand or sandy loam" when the dates are for the field on screen;
+  // typed coordinates elsewhere have no soil map here, and an unsure map asks the farmer too.
+  state.lightMap = !own || km(own.site, D.field.site) < 1 ? soilLightCheck(D.field) : null;
+  state.lightAsk = !state.lightMap || state.lightMap.light == null;
+  $('#rank-light-wrap').hidden = !state.lightAsk;
   $('#own-reset').hidden = !own || !!D.fieldId;   // a baked field leaves by the field buttons
   $('#own-status').textContent = note || (own
     ? `Showing ${coordText(own.site)}, fetched ${own.fetched}. NASA POWER is modelled on a grid of about 50 km, so neighbouring fields get the same values. `
@@ -156,7 +158,7 @@ async function loadOwn(site) {
 function renderRank() {
   const r = rankNow();
   $('#h-rank').textContent = r ? `Which fields to trap first: ${ui.RANK_TEXT[r.rank].toLowerCase()} third for ${r.year}` : 'Which fields to trap first';
-  $('#rank').innerHTML = ui.fieldRankHTML(r, D.model, { lightSoilNote: state.own ? OWN_SOIL_NOTE : LIGHT_SOIL_NOTE });
+  $('#rank').innerHTML = ui.fieldRankHTML(r, D.model, { lightSoilNote: state.lightMap ? soilLightNote(state.lightMap) : OWN_SOIL_NOTE });
   $('#record').textContent = recordNow();
 }
 
