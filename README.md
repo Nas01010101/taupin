@@ -85,7 +85,8 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   date for each year since 1995 and the field's rank. Only the two coordinates leave the device,
   and the answer is kept for use without a network. It also asks for daily NASA GPM IMERG rain and air
   temperature, so the water columns of the rotation table are the field's own. The 3D field, the trap
-  points and the pest levels stay the demo square.
+  points and the pest levels stay those of the field on screen: the demo square, or one of the three
+  baked farm fields, whose pest levels start from their own crop history.
 - **Count.** A sheet for three lifts per trap. Each lift is compared on its own with the threshold
   of the dominant species (3 per trap for *Hypnoidus abbreviatus*, 1 for *Agriotes*, *Limonius*
   and *Melanotus*; RAP Grandes cultures, Agri-Réseau doc. 115269).
@@ -283,7 +284,9 @@ Gallery photos (Wikimedia Commons):
   "unclear" (`model/MODEL_CARD.md`).
 - Three Quebec farm fields are baked besides the park (Laval, Saint-Eustache, Mirabel). Their crop
   history is the AAFC Annual Crop Inventory at 30 m: the yearly crop is the majority class over the
-  open cells, so a share near 50 % means a split field. The IRDA soil map used covers sheet 31H12
+  open cells, so a share near 50 % means a split field. That history sets the earlier years of each
+  field's pest table (`python -m taupin.bake --fields` writes `web/data/fields/<id>/risk.json`); the
+  soil zones (organic matter 5 % and 12 %) are still the park's scenario. The IRDA soil map used covers sheet 31H12
   only, and HRDEM lidar has holes between projects (no coverage at Calumet).
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.

@@ -210,7 +210,7 @@ model leaves out:
 | No cover crops | wheat and soybean years keep bare soil after harvest | a cover crop option after wheat and soybean, with its USLE C and nitrogen effect |
 | USLE uses C only; K and LS of the field are not used | soil loss is compared, not estimated in t/ha | A = R K LS C P for the demo square from HRDEM slope and CanSIS texture; slope class from the farmer elsewhere |
 | Buckwheat has no FAO-56 coefficient, Quebec nitrogen rate or CGQ yield | its rotation ranks after the fully scored ones | find a measured coefficient and a CRAAQ rate; until then ? stays ? |
-| Pest levels are the demo square's for any field | pest points do not follow the farmer's history | ask for the last two crops and feed them to `web/js/risk.js` |
+| Pest levels are the demo square's for any field | partly done: the three baked farm fields start from their own crop history (`taupin.bake --fields`, `web/data/fields/<id>/risk.json`); typed coordinates still get the demo square's | ask for the last two crops elsewhere and bake or compute the table from them |
 | Equal weights, no yield or price | the ranking ignores income | farmer weights per priority; CGQ prices per crop |
 | SMAP for the demo field only | no satellite soil moisture for another field | check whether GIBS answers browser requests; if yes, fetch the 0.4 degree box for the entered point |
 

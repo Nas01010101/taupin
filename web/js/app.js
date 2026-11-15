@@ -464,8 +464,11 @@ async function main() {
   let own = null, lastPick = null;
   if (!DEMO_RUN) try { own = JSON.parse(localStorage.getItem(OWN_KEY)); lastPick = localStorage.getItem(FIELD_KEY); } catch { /* blocked or bad JSON */ }
   const fieldId = DEMO_RUN ? null : startField(fields, location.search, { last: lastPick, site: own?.site }), base = fieldId ? `data/fields/${fieldId}/` : 'data/';
-  const [field, risk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([`${base}field.json`, 'data/risk.json', 'data/soil.json',
-    'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON));
+  // A baked field has its own pest table, from its crop history (taupin.bake --fields); the park's
+  // table assumes three years of sod and is only the fallback.
+  const riskJSON = fieldId ? getJSON(`${base}risk.json`).catch(() => getJSON('data/risk.json')) : getJSON('data/risk.json');
+  const [field, risk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([getJSON(`${base}field.json`), riskJSON,
+    ...['data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON)]);
   const views = VIEWS.filter(v => field.layers.some(l => l.key === v.layer));   // the park has no crop map
   D = { field, risk, soil, gallery: gallery.items, metrics: null, model, fieldRisk, crops, rotations, weather, smap, demo: { soil, fieldRisk, weather }, fields, fieldId, views };
   state.sw.current = rotations.default_current in risk.rotations ? rotations.default_current : Object.keys(risk.rotations)[0];
