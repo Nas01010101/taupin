@@ -73,10 +73,13 @@ export function planRotation(R, crops, fld, { startYear, yearsSinceSod = R.years
 }
 
 // One zone's two scenarios for a sequence, in the shape of risk.json `zones[z].scenarios[*][id]`.
-export function scenariosFor(risk, R, zone, crops) {
+// start: {prior, yearsSinceSod} to replace the baked start (the farmer's crop history); omitted, the
+// start is the one risk.json was baked with, so the result equals the baked tables.
+export function scenariosFor(risk, R, zone, crops, start = null) {
   const z = risk.zones[zone], startYear = risk.start_year;
+  const opts = start ? { startYear, prior: start.prior, yearsSinceSod: start.yearsSinceSod } : { startYear };
   return {
-    baseline: planRotation(R, crops, z.field, { startYear }),
-    trap_threshold: planRotation(R, crops, z.field, { startYear, traps: { [startYear]: z.trap_threshold } }),
+    baseline: planRotation(R, crops, z.field, opts),
+    trap_threshold: planRotation(R, crops, z.field, { ...opts, traps: { [startYear]: z.trap_threshold } }),
   };
 }

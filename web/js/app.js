@@ -7,6 +7,7 @@ import { loadModel, classifyPixels } from './model.js';
 import { effectFor, riskView, trapWindow, trapPlan, ROTATION_NAMES } from './risk.js';
 import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
 import * as custom from './custom.js';
+import * as hist from './history.js';
 import { makeRules, scenariosFor } from './engine.js';
 import * as sw from './swui.js';
 import { fieldRanking } from './fieldrisk.js';
@@ -25,7 +26,7 @@ const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
 const PIN = { wireworm: 0xe3a93f, rootworm: 0xb3361f, beneficial: 0x4f9a5a, none: 0x8a8f8c, unscored: 0x8a8f8c, unclear: 0xf2f2f2 };
 
-const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, custom: [], draft: [], zone: 'upland', sel: null, rankYear: null, forage: 0, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
+const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, custom: [], draft: [], hist: { entries: {}, lastHay: null }, zone: 'upland', sel: null, rankYear: null, forage: 0, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
 let D, scene, mn;
 
 // The count sheet lives in this browser only (localStorage); nothing is sent anywhere.
@@ -50,7 +51,15 @@ function recordNow() {
   const r = rankNow();
   return scout.recordText({ date: today(), field: D.field, window: trapWindow(D.soil, D.risk.start_year), sheet, own: state.own && coordText(state.own),
     rank: r && { text: ui.RANK_TEXT[r.rank], year: r.year, n: D.model.metrics.n },
-    photos: state.evidence.map(e => `${formatAnswer(e.decision)}, ${e.zoneLabel}`), finds: state.finds });
+    photos: state.evidence.map(e => `${formatAnswer(e.decision)}, ${e.zoneLabel}`), finds: state.finds, history: historyRecord() });
+}
+
+// The crop history behind the pest levels, for the agronomist record; null when it is the baked one.
+function historyRecord() {
+  const start = histStart();
+  if (!start) return null;
+  const shares = Object.fromEntries(Object.entries(D.field.crops?.per_year ?? {}).map(([y, c]) => [y, c.share]));
+  return hist.historyLines(hist.rows(D.risk.start_year, satNow(), state.hist.entries, shares), state.hist.lastHay, start.sodKnown);
 }
 
 function renderCounts() {
@@ -133,12 +142,29 @@ function climNow() {
 // computation per zone and sequence.
 let rules = null;
 const scenCache = new Map();
+// The farmer's crop history (web/js/history.js), when it changes the engine's start: then every
+// rotation, presets included, is scored in the browser from that start instead of the baked one.
+const histField = () => D.fieldId ?? (state.own ? 'own' : 'demo');
+const satNow = () => hist.satelliteYears(D.risk.history);
+function histStart() {
+  const sat = satNow(), h = state.hist;
+  return hist.changesStart(sat, h.entries, h.lastHay) ? hist.engineStart(D.risk.start_year, sat, h.entries, h.lastHay) : null;
+}
 function extraNow(zone) {
-  return Object.fromEntries(state.custom.map(r => {
-    const k = `${zone}|${r.crops.join()}`;
-    if (!scenCache.has(k)) scenCache.set(k, scenariosFor(D.risk, rules, zone, r.crops));
-    return [r.id, { name: r.name, scenarios: scenCache.get(k) }];
-  }));
+  const start = histStart(), tag = start ? JSON.stringify(start) : '';
+  const score = (crops) => {
+    const k = `${zone}|${crops.join()}|${tag}`;
+    if (!scenCache.has(k)) scenCache.set(k, scenariosFor(D.risk, rules, zone, crops, start));
+    return scenCache.get(k);
+  };
+  const presets = start ? Object.entries(D.risk.rotations).map(([id, crops]) => [id, { name: ROTATION_NAMES[id] ?? id, custom: false, scenarios: score(crops) }]) : [];
+  return Object.fromEntries([...presets, ...state.custom.map(r => [r.id, { name: r.name, custom: true, scenarios: score(r.crops) }])]);
+}
+function renderHistory(status = '') {
+  const shares = Object.fromEntries(Object.entries(D.field.crops?.per_year ?? {}).map(([y, c]) => [y, c.share]));
+  const rowList = hist.rows(D.risk.start_year, satNow(), state.hist.entries, shares);
+  $('#hist-edit').innerHTML = ui.historyEditHTML({ rows: rowList, lastHay: state.hist.lastHay, hasSat: Object.keys(satNow()).length > 0,
+    active: !!histStart(), status, startYear: D.risk.start_year });
 }
 const seqOf = id => D.risk.rotations[id] ?? state.custom.find(r => r.id === id)?.crops;
 const allNames = () => ({ ...Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id])),
@@ -217,6 +243,7 @@ function renderPanel() {
   const rz = organic.riskZone(state.zone, om);
   const view = riskView(D.risk, rz, state.evidence, extraNow(rz));
   view.label = organic.zoneLabel(state.zone, om) ?? view.label;
+  if (histStart()) view.label += '; earlier crops as checked by the farmer';
   $('#organic').innerHTML = organic.organicHTML(org, units, state.sg, { status: state.sgStatus, where: here ? 'the parcel centre' : `your point ${coordText(state.own)}` });
   $('#zone-upland').setAttribute('aria-pressed', state.zone === 'upland');
   $('#zone-pocket').setAttribute('aria-pressed', state.zone === 'pocket');
@@ -494,6 +521,36 @@ function bind() {
     state.sw.current = $('#sw-current').value; state.sw.tillage = $('#sw-tillage').value;
     renderPanel();
   });
+  const saveHist = (status) => {
+    const kept = DEMO_RUN || hist.saveHistory(localStorage, histField(), state.hist);
+    renderHistory(kept ? status : 'Kept for this visit only: this browser blocks storage.');
+    renderPanel();
+  };
+  $('#hist-edit').addEventListener('change', e => {
+    const y = e.target.closest('[data-hist-year]');
+    if (y) {
+      const entries = { ...state.hist.entries };
+      if (y.value) entries[y.dataset.histYear] = y.value; else delete entries[y.dataset.histYear];
+      state.hist = { ...state.hist, entries };
+      saveHist('Saved. The pest levels and the rotations below use these years.');
+      return;
+    }
+    if (e.target.matches('[data-last-hay]')) {
+      const v = Number(e.target.value);
+      state.hist = { ...state.hist, lastHay: e.target.value && Number.isInteger(v) && v > 1900 && v < D.risk.start_year ? v : null };
+      saveHist(state.hist.lastHay ? 'Saved.' : 'No last hay year: the count runs from the first known year.');
+    }
+  });
+  $('#hist-edit').addEventListener('click', e => {
+    if (e.target.closest('[data-hist-confirm]')) {
+      const sat = satNow();
+      state.hist = { ...state.hist, entries: Object.fromEntries(hist.windowYears(D.risk.start_year).filter(y => sat[y]).map(y => [y, sat[y]])) };
+      saveHist('Confirmed: the agronomist record says you checked these years.');
+    } else if (e.target.closest('[data-hist-reset]')) {
+      state.hist = { entries: {}, lastHay: null };
+      saveHist('Back to the satellite years.');
+    }
+  });
   $('#sw-build').addEventListener('change', e => {
     const y = e.target.closest('[data-build-year]');
     if (y) { state.draft[Number(y.dataset.buildYear)] = y.value; return; }
@@ -557,11 +614,13 @@ async function main() {
   state.sw.defaultCurrent = state.sw.current;
   rules = makeRules(risk);
   state.custom = DEMO_RUN ? [] : custom.loadCustom(localStorage, crops);
+  state.hist = DEMO_RUN ? { entries: {}, lastHay: null } : hist.loadHistory(localStorage, D.fieldId ?? (own ? 'own' : 'demo'));
   state.draft = [...risk.rotations[state.sw.current]];
   if (field.crops) { state.forage = field.crops.forage_years_last5; $('#rank-forage').value = state.forage; }
   $('#fields').innerHTML = [...fields, { id: 'demo', name: 'Demo park (Bois-de-Liesse)' }].map(f =>
     `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? 'demo')}">${ui.esc(f.name)}</button>`).join('');
   $('#crop-hist').innerHTML = ui.cropHistHTML(field.crops, ROTATION_NAMES);
+  renderHistory();
   renderControls();
   renderBuilder();
   $('#smap').innerHTML = sw.smapHTML(smap, weather);

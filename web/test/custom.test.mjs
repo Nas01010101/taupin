@@ -39,7 +39,7 @@ test('adding, refusing, removing and keeping rotations on the device', () => {
 
 test('own rotations join the risk view with engine levels, and their card text cites the rules', () => {
   const R = makeRules(risk), mine = { id: 'U1', name: 'Mine', crops: ['corn', 'corn', 'corn', 'soybean', 'wheat'] };
-  const v = riskView(risk, 'upland', [], { U1: { name: mine.name, scenarios: scenariosFor(risk, R, 'upland', mine.crops) } });
+  const v = riskView(risk, 'upland', [], { U1: { name: mine.name, custom: true, scenarios: scenariosFor(risk, R, 'upland', mine.crops) } });
   assert.equal(v.rows.length, Object.keys(risk.rotations).length + 1);
   const row = v.rows.at(-1);
   assert.deepEqual([row.rotation, row.name, row.custom], ['U1', 'Mine', true]);

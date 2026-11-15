@@ -1,5 +1,6 @@
 // HTML string renderers. Pure (no DOM access) so node --test can check them. Every value that
 // comes from a file, the model or the user goes through esc() before it reaches markup.
+import { PAST_CROPS as PAST, PAST_LABEL as PAST_NAMES } from './history.js';
 import { UNCLEAR, formatAnswer } from './classify.js';
 import { GROUP, legend, resolutionText } from './layers.js';
 import { GENUS_LABEL, LAB, LIFTS, THRESHOLDS, liftLine, verdict } from './scout.js';
@@ -266,4 +267,19 @@ export function cropHistHTML(crops, names = {}) {
     + rotationText(crops, names)
     + `Grass or forage years in the last five: ${esc(crops.forage_years_last5)}, preset in the field rank. Corn years in a row at the end: ${esc(crops.corn_run)}. `
     + `A share near 50 % means the field was split between two crops that year. ${esc(crops.source)}.</p>`;
+}
+
+// "Check your crop history": the five years before the plan, each a picker with where its value
+// comes from, an optional last hay or pasture year, and buttons to confirm or go back.
+export function historyEditHTML({ rows, lastHay, hasSat, active, status = '', startYear }) {
+  const FROM = { satellite: 'satellite map', farmer: 'you', confirmed: 'checked', none: 'not known' };
+  const opts = (sel) => `<option value="">?</option>${PAST.map(c => `<option value="${c}"${c === sel ? ' selected' : ''}>${esc(PAST_NAMES[c])}</option>`).join('')}`;
+  const picks = rows.map(r => `<label class="hist-year"><span>${r.year}</span><select data-hist-year="${r.year}">${opts(r.crop)}</select>
+<small>${esc(FROM[r.from])}${r.from === 'satellite' && r.share != null ? `, ${Math.round(r.share * 100)} %` : ''}</small></label>`).join('');
+  return `<details class="hist"${active || !hasSat ? ' open' : ''}><summary>${hasSat ? 'Check your crop history' : 'Enter your crop history'}</summary>
+<p class="small">${hasSat ? 'The years come from the satellite crop map. Change any year that is wrong: the pest levels and every rotation are then scored from your years.' : 'This field has no satellite crop history here. Enter what grew each year: the pest levels and every rotation are then scored from your years.'}</p>
+<div class="hist-row">${picks}</div>
+<div class="hist-row"><label>Last year in hay or pasture, if before ${startYear - 5} <input type="number" data-last-hay min="1950" max="${startYear - 1}" step="1" inputmode="numeric" value="${lastHay ?? ''}"></label>
+${hasSat ? '<button type="button" data-hist-confirm>These years are right</button>' : ''}<button type="button" class="ghost" data-hist-reset>${hasSat ? 'Back to the satellite years' : 'Clear'}</button></div>
+<p class="small" role="status">${esc(status || (active ? 'The pest levels below use your years.' : ''))}</p></details>`;
 }

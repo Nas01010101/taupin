@@ -114,8 +114,16 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   `src/taupin/engine.py` that reads the rule constants from `risk.json`; `web/test/engine.test.mjs`
   checks it against every preset of `risk.json`, every 5-year sequence of the four crops and 80
   seeded cases with traces (`python -m taupin.engine_parity` writes the fixture). Their card text is
-  written from the engine rules that applied, each with its source. Like the presets, the field is
-  taken as three sod years before 2026.
+  written from the engine rules that applied, each with its source. They start from the same crop
+  history as the presets: the field's own on a baked farm field, three sod years on the park.
+- **Your crop history.** Under the crop strip, "Check your crop history" shows 2021 to 2025, pre-filled
+  from the satellite crop map on a baked farm field (with its share of the open cells) and empty
+  elsewhere, plus the last hay or pasture year if it is earlier. A year the farmer changes, or a last
+  hay year, becomes the engine's start: every rotation, presets included, is then scored in the
+  browser from those years (`web/js/history.js`, `web/js/engine.js`). On Laval, 2025 soybean instead
+  of corn takes 2026 corn rootworm from HIGH to LOW. The agronomist record lists each year with its
+  source (satellite map, confirmed, or entered by the farmer). Kept in the browser only, per field.
+  `web/test/history.test.mjs` also checks that each farm's baked table equals the browser engine.
 - **Hand over.** Trap points as GPX, CSV and GeoJSON, and a text record with the trap date, the
   counts, the ranking and the photos, for the agronomist. Taupin never decides the prescription.
   The agronomist signs.

@@ -195,4 +195,12 @@ export const PATTERNS = [
   [/^Corn after corn in (.+): corn rootworm moderate or high$/, 'Maïs sur maïs en $1: chrysomèle des racines moyenne ou élevée'],
   [/^Wireworm high in (.+): bait traps before buying seed$/, 'Vers fil-de-fer élevés en $1: pièges-appâts avant d\'acheter la semence'],
   [/^The rules would support a coated-seed prescription in (.+); the agronomist decides$/, 'Les règles justifieraient une prescription de semences traitées en $1; l\'agronome décide'],
+  // Crop history the farmer checks
+  [/^satellite map, (\d+) %$/, 'carte satellite, $1 %'],
+  [/^Last year in hay or pasture, if before (\d{4})$/, 'Dernière année en foin ou pâturage, si avant $1'],
+  [/^(.+); earlier crops as checked by the farmer$/, (m, sub) => `${sub(m[1])}; cultures antérieures vérifiées par l'agriculteur`],
+  [/^(\d{4}): (.+) \((satellite map|entered by the farmer|satellite map, confirmed by the farmer|not known)(?:; the satellite map said (.+))?\)$/, (m, sub) =>
+    `${m[1]}: ${sub(m[2])} (${{ 'satellite map': 'carte satellite', 'entered by the farmer': 'entré par l\'agriculteur', 'satellite map, confirmed by the farmer': 'carte satellite, confirmé par l\'agriculteur', 'not known': 'inconnu' }[m[3]]}${m[4] ? `; la carte satellite indiquait ${sub(m[4])}` : ''})`],
+  [/^Last hay or pasture year, entered by the farmer: (\d{4})$/, 'Dernière année en foin ou pâturage, entrée par l\'agriculteur: $1'],
+  [/^No hay or pasture year known: years since sod is a lower bound$/, 'Aucune année de foin ou pâturage connue: les années depuis la prairie sont une borne inférieure'],
 ];

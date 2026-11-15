@@ -196,4 +196,8 @@ export const TEXT = {
     'Le texte de cette fiche est rédigé à partir des règles du moteur pour cette séquence; aucune note d\'agronome pour l\'instant',
   'Before 2026 the field is taken as three sod years, the same start as the preset rotations':
     'Avant 2026, la parcelle est considérée comme en prairie pendant trois ans, le même point de départ que les rotations proposées',
+  'The years come from the satellite crop map. Change any year that is wrong: the pest levels and every rotation are then scored from your years.':
+    'Les années viennent de la carte satellite des cultures. Changez toute année erronée: les niveaux de ravageurs et toutes les rotations sont alors évalués à partir de vos années.',
+  'This field has no satellite crop history here. Enter what grew each year: the pest levels and every rotation are then scored from your years.':
+    'Ce champ n\'a pas d\'historique satellite ici. Entrez ce qui a poussé chaque année: les niveaux de ravageurs et toutes les rotations sont alors évalués à partir de vos années.',
 };
