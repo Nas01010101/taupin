@@ -239,6 +239,20 @@ export function countResultHTML(s, minTraps) {
 
 // Crop history strip: one swatch per year (AAFC ACI majority class over the open cells, with
 // the share of cells that class covers), then the rotation it matches and the model inputs.
+// Which listed rotation the history follows (src/taupin/crophist.py summary): the preset one and
+// any that agree on as many years, or, when none reaches the bar, why nothing is preset.
+function rotationText(crops, names) {
+  const nm = id => names[id] ?? id, and = xs => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  if (crops.rotation) {
+    const ties = crops.rotation_ties ?? [];
+    return `Closest rotation: ${esc(nm(crops.rotation))} (${esc(crops.rotation_match)} recent years agree), preset below. `
+      + (ties.length ? `${esc(and(ties.map(nm)))} ${ties.length > 1 ? 'agree' : 'agrees'} on as many years; ${esc(nm(crops.rotation))} agrees on the more recent ones. ` : '');
+  }
+  if (!crops.rotation_best) return '';
+  const hay = crops.forage_years_last5 ? `; ${esc(crops.forage_years_last5)} of the last five years were hay or pasture, which no listed rotation has` : '';
+  return `No listed rotation fits: the closest agree on only ${esc(crops.rotation_match)} recent years${hay}. Nothing is preset; mark the rotation you follow below. `;
+}
+
 export function cropHistHTML(crops, names = {}) {
   if (!crops) return '';
   const years = Object.keys(crops.per_year).sort();
@@ -249,7 +263,7 @@ export function cropHistHTML(crops, names = {}) {
   const last = crops.per_year[crops.last_year];
   return `<strong>Crop history, ${esc(years[0])} to ${esc(years[years.length - 1])}</strong><ul class="crop-strip">${cells}</ul>`
     + `<p>Last year: ${esc(last?.name ?? 'no crop class')}${last ? `, ${Math.round(last.share * 100)} % of the open cells` : ''}. `
-    + `Closest rotation: ${esc(names[crops.rotation] ?? crops.rotation)} (${esc(crops.rotation_match)} recent years agree), preset below. `
+    + rotationText(crops, names)
     + `Grass or forage years in the last five: ${esc(crops.forage_years_last5)}, preset in the field rank. Corn years in a row at the end: ${esc(crops.corn_run)}. `
     + `A share near 50 % means the field was split between two crops that year. ${esc(crops.source)}.</p>`;
 }

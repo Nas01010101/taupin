@@ -46,3 +46,19 @@ test('count sheet has one input per trap per lift and escapes saved values', () 
   assert.match(res, /class="callout"/);
   assert.match(res, /Lift 1 has 1 of the 10 traps/);
 });
+
+import { cropHistHTML } from '../js/ui.js';
+import { readFileSync as readF } from 'node:fs';
+const cropsOf = id => JSON.parse(readF(new URL(`../data/fields/${id}/field.json`, import.meta.url), 'utf8')).crops;
+const RN = { A_continuous_corn: 'Corn every year', G_corn_corn_soy_wheat: 'Two corn years, soybean, wheat', B_corn_soy_wheat: 'Corn, soybean, wheat' };
+
+test('crop history names the preset rotation and any tie, or says why nothing is preset', () => {
+  const laval = cropHistHTML(cropsOf('laval'), RN);
+  assert.match(laval, /Closest rotation: Corn every year \(4 of 5 recent years agree\), preset below\./);
+  assert.match(laval, /Two corn years, soybean, wheat agrees on as many years; Corn every year agrees on the more recent ones\./);
+  const mirabel = cropHistHTML(cropsOf('mirabel'), RN);
+  assert.match(mirabel, /Closest rotation: Corn, soybean, wheat \(4 of 5/); assert.doesNotMatch(mirabel, /as many years/);
+  const eustache = cropHistHTML(cropsOf('eustache'), RN);
+  assert.match(eustache, /No listed rotation fits: the closest agree on only 2 of 5 recent years; 2 of the last five years were hay or pasture/);
+  assert.match(eustache, /Nothing is preset/); assert.doesNotMatch(eustache, /preset below/);
+});

@@ -47,7 +47,7 @@ def load_power_param(path: Path, name: str) -> dict:
 
 # Crop-history groups (taupin.crophist) -> engine crop names. Hay and pasture are grass, as sod.
 ENGINE_CROP = {"corn": "corn", "soybean": "soybean", "wheat": "wheat", "buckwheat": "buckwheat",
-               "forage": "sod", "oat": "oat", "barley": "barley", "canola": "canola"}
+               "forage": "sod", "oat": "oat", "barley": "barley", "rye": "rye", "canola": "canola"}
 PARK_PRIOR = ("sod", "sod", "sod")   # the demo park is a meadow: three years of sod, sod last year
 
 

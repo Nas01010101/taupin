@@ -13,7 +13,8 @@ export const VIEWS = [
 ];
 
 // Crop map colours by engine crop group (AAFC ACI classes grouped in src/taupin/crophist.py).
-export const GROUP = { corn: [222, 178, 48], soybean: [120, 160, 60], wheat: [196, 140, 80], buckwheat: [170, 110, 150], forage: [70, 140, 90], other: [150, 150, 140] };
+// Oats, rye and barley are small grains like wheat (src/taupin/crophist.py GROUPS) and share its colour.
+export const GROUP = { corn: [222, 178, 48], soybean: [120, 160, 60], wheat: [196, 140, 80], oat: [196, 140, 80], rye: [196, 140, 80], barley: [196, 140, 80], buckwheat: [170, 110, 150], forage: [70, 140, 90], other: [150, 150, 140] };
 
 // value = offset + scale * q; q === nodata is NaN. Little-endian, row-major from the north-west.
 export function decode(buf, enc) {

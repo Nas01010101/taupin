@@ -15,8 +15,8 @@
   "lat": 45.6459,
   "lon": -73.9212,
   "open_ha": 27.6,
-  "rotation": "F_soy_wheat",
-  "rotation_match": "3 of 5",
+  "rotation": null,
+  "rotation_match": "2 of 5",
   "last_crop": "soybean"
  },
  {
