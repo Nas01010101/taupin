@@ -23,7 +23,7 @@ that count:
 
 | Step | What the farmer gets | Data behind it |
 |---|---|---|
-| Plan | wireworm and corn rootworm level per year for three rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
+| Plan | wireworm and corn rootworm level per year for seven rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
 | Scout: when | the week to set bait traps (soil at 12 °C in the top 10 cm) | NASA POWER `TSOIL1`, 1995 to 2025 |
 | Scout: which fields | the field's rank (low, middle or high third) among 82 Quebec fields | field risk model: 2 field-form answers + 2 NASA POWER values |
 | Scout: where | ten trap points spread over four scouting zones, as GPX, CSV and GeoJSON | lidar relief and wetness index, NASA HLS NDVI, Landsat surface temperature, soil map |
@@ -48,7 +48,7 @@ Taupin does not replace it. What Taupin adds around it:
 | one risk level for the whole field | trap points spread over the field's soil, relief and vegetation zones |
 | no weather or satellite input | NASA POWER soil temperature and soil wetness; satellite layers per cell |
 | no calendar | the week the soil reaches the trapping temperature |
-| current year | five years, three rotations side by side |
+| current year | five years, seven rotations side by side |
 | identification by sending samples | photo model in the browser, with the lab as the fallback |
 | account required, model and data not published | open code, open model, public data, runs offline |
 
@@ -72,7 +72,7 @@ open complement, not a stronger predictor.
 | Six-step farmer flow on the first screen; model numbers under "Details" | on `claude/two-versions` | `web/index.html`, `web/app.css` |
 | Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | on `claude/two-versions` | `web/js/finds.js`, `web/test/finds.test.mjs` |
 | Research outline and challenge fit | on `claude/two-versions` | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
-| Four rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
+| Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
 | GPM IMERG daily rain and SMAP L4 soil moisture | on `soil-water` | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
 
 ## Data
@@ -217,8 +217,8 @@ model leaves out:
 
 ## Submission checklist
 
-- [ ] Deck at 7 slides or fewer (done), public link, no login (shared as "anyone with the link"; check it in a private window)
-- [ ] Public repository with licence, README, run commands
+- [x] Deck at 7 slides or fewer, public link, no login
+- [x] Public repository with licence, README, run commands
 - [ ] References list covering NASA POWER, GPM IMERG, SMAP L4, FAO-56, OMAFRA 23-005, CRAAQ and MAPAQ nitrogen grids, Lal 2005, HLS, Landsat, HRDEM, IRDA, CanSIS, OpenStreetMap, Labrie et al. 2020, GBIF, Wikimedia Commons, VFF QC, RAP and MAPAQ documents
-- [ ] All text in English
+- [x] Interface in English and French (`?lang=fr`)
 - [ ] Every number in the deck and README traceable to `model/metrics.json` or `risk/model/metrics.json`

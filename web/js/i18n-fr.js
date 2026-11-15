@@ -28,7 +28,7 @@ export const DICT = {
   'Photo and notes.': 'Photo et notes.',
   'Log a soil insect, standing water, ground cover or a water channel on the field.': 'Consignez un insecte du sol, de l\'eau stagnante, la couverture du sol ou une rigole d\'écoulement sur le champ.',
   'What to plant.': 'Quoi semer.',
-  'Four rotations over five years: soil, water, nitrogen and pests.': 'Quatre rotations sur cinq ans: sol, eau, azote et ravageurs.',
+  'Seven rotations over five years: soil, water, nitrogen and pests.': 'Sept rotations sur cinq ans: sol, eau, azote et ravageurs.',
 
   // The parcel and the 3D field
   'The parcel': 'La parcelle',

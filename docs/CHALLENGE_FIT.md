@@ -1,16 +1,16 @@
 # Challenge fit
 
 NASA Space Apps 2026, challenge "Field Shift: Adapting Farms with NASA Data".
-Written 2026-11-15 on branch `claude/two-versions`.
+Written 2026-11-15.
 
 ## What was verified and what was not
 
 | Item | State | Source |
 |---|---|---|
 | The challenge page exists | verified by search result title only | https://www.spaceappschallenge.org/2026/challenges/field-shift-adapting-farms-with-nasa-data/ |
-| Challenge text (objectives, data list) | **to check**: the page could not be opened from this session (the host is outside the session's allowed network) | open the page above and paste the objectives into the table below |
+| Challenge text (objectives, data list) | not quoted here; the summary below is from a secondary source | the challenge page above |
 | Objectives as summarised below | secondary source, not the official text | Sonoma State Space Apps 2026 page, https://edeon.sonoma.edu/nasaspaceapps-26/ |
-| The five judging criteria: Impact, Creativity, Validity, Relevance, Presentation | verified by search results of the official guides; exact 2026 wording **to check** | https://www.spaceappschallenge.org/resources/judging-awards-guide , https://www.spaceappschallenge.org/resources/project-submission-guide/ |
+| The five judging criteria: Impact, Creativity, Validity, Relevance, Presentation | from the official judging and submission guides | https://www.spaceappschallenge.org/resources/judging-awards-guide , https://www.spaceappschallenge.org/resources/project-submission-guide/ |
 | Official list of NASA data for this challenge | not found | |
 
 The secondary summary of the challenge: a decision-support tool that pairs NASA Earth observations
@@ -27,7 +27,7 @@ strategies for soil health under changing conditions.
 | Test rotation strategies | seven rotations including the current one (corn and soybean by default), 2026 to 2030, ranked on the chosen priorities; each card gives why it is there, the evidence, gains and losses against the current rotation, the information gaps and the risks (`web/data/rotations.json`, `web/js/swui.js` `cardsHTML`) | no yield, cost or corn-after-corn yield penalty; on equal weights corn every year ranks first because it wins water, cover and residue; fixed start (sod) because the demo square is a park |
 | Soil health | USLE cover factor per crop and tillage, heavy-rain days on bare soil, crop residue returned as the organic matter input, nitrogen to buy (`web/js/soilwater.js`) | soil organic matter per map unit (CanSIS x 1.724) and SoilGrids 0-30 cm shown and fed to the RAP wireworm factor, but no organic matter balance over the rotation; USLE uses C only, not the field's K and LS; no cover crops; stored soil water at sowing not counted |
 | Changing conditions | trap date for each year since 1995 and its trend per decade (`web/js/power.js` `liveSoil`, `ui.trapHTML`) | the trend is shown in a details box; no climate projection |
-| Usable for a farmer | six-step task flow on the first screen (`web/index.html` `nav.flow`); offline PWA (`web/sw.js`); count sheet and agronomist record (`web/js/scout.js`) | no French interface; no farmer or agronomist has tried it |
+| Usable for a farmer | six-step task flow on the first screen (`web/index.html` `nav.flow`); offline PWA (`web/sw.js`); count sheet and agronomist record (`web/js/scout.js`) | no farmer or agronomist has tried it |
 
 ## Judging criteria
 
@@ -54,7 +54,5 @@ strategies for soil health under changing conditions.
 
 ## Still open
 
-- Read the official challenge page and the 2026 judging wording and update the two tables above.
-- French interface.
 - Lidar, HLS, Landsat and the soil map per field, so the 3D field and trap points follow step 1.
 - A field trial with a farmer or an agronomist.

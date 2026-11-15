@@ -11,6 +11,9 @@ runs in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
+App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s
+with voice-over: [`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
+
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">
 <img src="docs/assets/networks.svg" width="49%" alt="The two models: the field model takes NASA POWER soil temperature and wetness plus two farmer inputs; the photo model is DINOv2-S with an 8-class head">
@@ -178,8 +181,7 @@ flowchart LR
 
 Another field is baked with `python -m taupin.fetch_layers --work <dir> --lat <lat> --lon <lon> --way
 <osm way> --hrdem-id <project>`, then `python -m taupin.layers --work <dir> --irda <dir> --cansis <dir>
---out web/data/fields/<id> --name <name>`. It
-and opens with `?field=<id>` once listed in `web/data/fields/index.json`.
+--out web/data/fields/<id> --name <name>`. The field then opens with `?field=<id>` once listed in `web/data/fields/index.json`.
 
 - `src/taupin/`: risk engine, POWER soil-temperature trap window, field layers, bake, local server,
   CLI classifier.
@@ -299,7 +301,9 @@ Gallery photos (Wikimedia Commons):
 ```bibtex
 @software{taupin2026,
   title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for a Quebec field},
+  author = {{Taupin contributors}},
   year  = {2026},
+  url   = {https://github.com/Nas01010101/taupin},
   note  = {NASA Space Apps Challenge 2026}
 }
 ```
