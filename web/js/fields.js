@@ -18,8 +18,16 @@ export function nearest(fields, site, maxKm = 10) {
   return best;
 }
 
-// The id in ?field= when it names a baked field, else null (the demo park).
-export function fieldParam(fields, search) {
-  const id = new URLSearchParams(search).get('field');
-  return fields.some(f => f.id === id) ? id : null;
+// The field a visit opens on, so a farmer is not dropped on the park each time: ?field= first
+// ('demo' asks for the park), then the last field picked on this device, then the baked field
+// nearest a position this device fetched (within nearKm), then the first baked field.
+// null means the demo park.
+export function startField(fields, search, { last = null, site = null, nearKm = 50 } = {}) {
+  const asked = new URLSearchParams(search).get('field');
+  if (asked === 'demo') return null;
+  if (fields.some(f => f.id === asked)) return asked;
+  if (last === 'demo') return null;
+  if (fields.some(f => f.id === last)) return last;
+  const n = site && nearest(fields, site, nearKm);
+  return n ? n.field.id : fields[0]?.id ?? null;
 }

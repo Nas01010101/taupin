@@ -16,7 +16,7 @@ import * as memory from './memory.js';
 import * as memoryui from './memoryui.js';
 import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
-import { nearest, fieldParam, km } from './fields.js';
+import { nearest, startField, km } from './fields.js';
 
 const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
@@ -84,7 +84,7 @@ function renderModelStatus() {
 const LIGHT_SOIL_NOTE = 'Soil map units in this parcel are clay loam and muck, so the sand or sandy loam input is no everywhere and the rank is the same across the parcel.';
 
 const OWN_SOIL_NOTE = 'The app has no soil map for this place: tick the box if the field is sand or sandy loam.';
-const OWN_KEY = 'taupin-own';
+const OWN_KEY = 'taupin-own', FIELD_KEY = 'taupin-field';   // FIELD_KEY: the last field picked here
 
 // A baked field near the typed position: say so, with a link that opens it.
 function nearHint(site) {
@@ -149,7 +149,7 @@ async function loadOwn(site) {
     try { localStorage.setItem(OWN_KEY, JSON.stringify(own)); } catch { /* storage blocked: the field lasts for this visit */ }
     useField(own);
   } catch (e) {
-    $('#own-status').textContent = `No dates for ${coordText(site)}: ${e instanceof TypeError ? 'NASA POWER could not be reached' : e.message}. The page still shows ${state.own ? coordText(state.own) : 'the demo field'}.`;
+    $('#own-status').textContent = `No dates for ${coordText(site)}: ${e instanceof TypeError ? 'NASA POWER could not be reached' : e.message}. The page still shows ${state.own ? coordText(state.own) : D.fieldId ? `${D.field.site.name} with the demo park's NASA dates` : 'the demo field'}.`;
   }
 }
 
@@ -401,7 +401,8 @@ function bind() {
     const b = e.target.closest('button[data-field]');
     if (!b) return;
     const q = new URLSearchParams(location.search);
-    if (b.dataset.field) q.set('field', b.dataset.field); else q.delete('field');
+    q.set('field', b.dataset.field);
+    try { localStorage.setItem(FIELD_KEY, b.dataset.field); } catch { /* storage blocked: the URL still carries it */ }
     location.search = q.toString();
   });
   $('#regions').addEventListener('click', e => { const b = e.target.closest('button[data-lat]'); if (b) loadOwn(parseCoords(b.dataset.lat, b.dataset.lon)); });
@@ -459,7 +460,10 @@ function showLayer(key) {
 
 async function main() {
   const fields = await getJSON('data/fields/index.json').catch(() => []);
-  const fieldId = fieldParam(fields, location.search), base = fieldId ? `data/fields/${fieldId}/` : 'data/';
+  // A field fetched earlier comes back from this device's storage, so it also opens with no network.
+  let own = null, lastPick = null;
+  if (!DEMO_RUN) try { own = JSON.parse(localStorage.getItem(OWN_KEY)); lastPick = localStorage.getItem(FIELD_KEY); } catch { /* blocked or bad JSON */ }
+  const fieldId = DEMO_RUN ? null : startField(fields, location.search, { last: lastPick, site: own?.site }), base = fieldId ? `data/fields/${fieldId}/` : 'data/';
   const [field, risk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([`${base}field.json`, 'data/risk.json', 'data/soil.json',
     'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON));
   const views = VIEWS.filter(v => field.layers.some(l => l.key === v.layer));   // the park has no crop map
@@ -468,8 +472,8 @@ async function main() {
   // A baked field brings its crop history: the rotation it follows and its grass/forage years.
   if (field.crops?.rotation in risk.rotations) state.sw.current = field.crops.rotation;
   if (field.crops) { state.forage = field.crops.forage_years_last5; $('#rank-forage').value = state.forage; }
-  $('#fields').innerHTML = [{ id: '', name: 'Demo park (Bois-de-Liesse)' }, ...fields].map(f =>
-    `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? '')}">${ui.esc(f.name)}</button>`).join('');
+  $('#fields').innerHTML = [...fields, { id: 'demo', name: 'Demo park (Bois-de-Liesse)' }].map(f =>
+    `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? 'demo')}">${ui.esc(f.name)}</button>`).join('');
   $('#crop-hist').innerHTML = ui.cropHistHTML(field.crops, ROTATION_NAMES);
   $('#sw-controls').innerHTML = sw.controlsHTML({ names: Object.fromEntries(Object.keys(risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id])), ...state.sw });
   $('#smap').innerHTML = sw.smapHTML(smap, weather);
@@ -486,9 +490,6 @@ async function main() {
   $('#field-src').innerHTML = Object.values(field.sources).map(s => `<li>${ui.esc(s)}</li>`).join('');
   $('#gallery').innerHTML = ui.galleryHTML(D.gallery, null);
   bind();
-  // A field fetched earlier comes back from this device's storage, so it also opens with no network.
-  let own = null;
-  if (!DEMO_RUN) try { own = JSON.parse(localStorage.getItem(OWN_KEY)); } catch { /* blocked or bad JSON: demo field */ }
   const last = finds.latestSite(state.finds), def = own?.site ?? last;   // the latest find is the default field position
   if (def) { $('#own-lat').value = def.lat; $('#own-lon').value = def.lon; }
   if (state.finds.length || state.notes.length) scene.ready.then(rebuildPins);
