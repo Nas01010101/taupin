@@ -5,7 +5,7 @@ import { createScene } from './scene.js';
 import { VIEWS } from './layers.js';
 import { loadModel, classifyPixels } from './model.js';
 import { effectFor, riskView, trapWindow, ROTATION_NAMES } from './risk.js';
-import { climatology, rotationMetrics, rank } from './soilwater.js';
+import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
 import * as sw from './swui.js';
 import { fieldRanking } from './fieldrisk.js';
 import { parseCoords, coordText, fetchField } from './power.js';
@@ -44,7 +44,7 @@ const rankNow = () => fieldRanking(D.model, D.fieldRisk, { year: state.rankYear,
 
 function recordNow() {
   const r = rankNow();
-  return scout.recordText({ date: today(), field: D.field, window: trapWindow(D.soil), sheet, own: state.own && coordText(state.own),
+  return scout.recordText({ date: today(), field: D.field, window: trapWindow(D.soil, D.risk.start_year), sheet, own: state.own && coordText(state.own),
     rank: r && { text: ui.RANK_TEXT[r.rank], year: r.year, n: D.model.metrics.n },
     photos: state.evidence.map(e => `${formatAnswer(e.decision)}, ${e.zoneLabel}`), finds: state.finds });
 }
@@ -107,7 +107,12 @@ function useField(own, note = '') {
 const climCache = new WeakMap();
 function climNow() {
   if (!D.weather) return null;
-  if (!climCache.has(D.weather)) climCache.set(D.weather, climatology(D.weather, D.crops.crops, D.weather.site?.lat ?? D.field.site.lat, D.crops.heavy_rain_mm));
+  if (!climCache.has(D.weather)) {
+    const lat = D.weather.site?.lat ?? D.field.site.lat, c = climatology(D.weather, D.crops.crops, lat, D.crops.heavy_rain_mm);
+    // Rotation year i is start_year + i, so its water columns use that year's projection.
+    const proj = projectClimate(D.weather, D.crops.crops, lat, D.risk.start_year, 5, D.crops.heavy_rain_mm);
+    climCache.set(D.weather, { ...c, byYear: proj.crops, proj });
+  }
   return climCache.get(D.weather);
 }
 
@@ -153,9 +158,9 @@ function renderPanel() {
   $('#risk-table').innerHTML = ui.riskTableHTML(view, state.sel);
   $('#trace').innerHTML = ui.traceHTML(view, state.sel);
   renderSoilWater(view);
-  const tw = trapWindow(D.soil);
-  $('#h-trap').textContent = `2. Trap week: set bait traps around ${tw.mean12}`;
-  $('#trap-lede').textContent = `The week the top 10 cm of soil reaches 12 °C. NASA POWER, mean of ${tw.span[0]}-${tw.span[1]}${state.own ? ` at ${coordText(state.own)}` : ''}.`;
+  const tw = trapWindow(D.soil, D.risk.start_year), next = tw.fc.trap_12C?.rows[0];
+  $('#h-trap').textContent = next ? `2. Trap week ${next.year}: set bait traps around ${next.date}` : `2. Trap week: set bait traps around ${tw.mean12}`;
+  $('#trap-lede').textContent = `The week the top 10 cm of soil reaches 12 °C${next ? `, likely between ${next.lo} and ${next.hi}` : ''}. Forecast from NASA POWER, ${tw.span[0]}-${tw.span[1]}${state.own ? ` at ${coordText(state.own)}` : ''}.`;
   $('#trap').innerHTML = ui.trapHTML(tw, D.soil, state.evidence);
   $('#evidence').innerHTML = ui.evidenceHTML(state.evidence);
   $('#result').innerHTML = ui.resultHTML(state.current);

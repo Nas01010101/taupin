@@ -4,6 +4,8 @@
 // in web/data/crops.json, each with its source. A value with no source stays null and is listed
 // as an information gap; it is never filled in.
 
+import { forecast, quantile as q } from './forecast.js';
+
 const RAD = Math.PI / 180;
 
 // FAO-56 Eq. 21: extraterrestrial radiation, MJ m-2 day-1.
@@ -110,6 +112,27 @@ export function climatology(weather, crops, lat, heavy = 25) {
   return out;
 }
 
+// Per crop, one projected row per rotation year (startYear .. startYear + n - 1): the yearly values
+// from cropYear, forecast with the model that wins the backtest in forecast.js. The dry year is
+// the forecast plus the 80th percentile of that model's backtest misses at the same horizon.
+export function projectClimate(weather, crops, lat, startYear, n = 5, heavy = 25) {
+  const years = byYear(weather), full = Object.keys(years).filter(y => years[y].length >= 365).map(Number);
+  const targets = Array.from({ length: n }, (_, i) => startYear + i), out = targets.map(() => ({})), models = {};
+  for (const [id, crop] of Object.entries(crops)) {
+    const rows = full.map(y => [y, cropYear(years[y], crop, lat, heavy)]).filter(r => r[1]);
+    if (rows.length < 13 || startYear <= rows[rows.length - 1][0]) continue;
+    const xs = rows.map(r => r[0]), f = k => forecast(xs, rows.map(r => r[1][k]), targets);
+    const def = f('deficit'), need = f('need'), heavyF = f('bareHeavy');
+    if (!def || !need || !heavyF) continue;
+    models[id] = def.label;
+    targets.forEach((_, i) => {
+      const d = def.rows[i];
+      out[i][id] = { deficit: d.value, deficitDry: d.value + q(d.misses, 0.8), need: need.rows[i].value, bareHeavy: Math.max(0, heavyF.rows[i].value) };
+    });
+  }
+  return { targets, crops: out, models };
+}
+
 const LV = { NONE: 0, LOW: 0, MODERATE: 1, HIGH: 2 };
 const mid = r => (r ? (r[0] + r[1]) / 2 : null);
 const known = xs => xs.filter(v => v != null);
@@ -121,7 +144,7 @@ const sum = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) : null);
 export function rotationMetrics(cropIds, clim, cropData, pests, tillage = 'fall_plow') {
   const tf = cropData.tillage[tillage];
   const years = cropIds.map((id, i) => {
-    const c = cropData.crops[id], cl = clim.crops[id], prev = i ? cropData.crops[cropIds[i - 1]] : null;
+    const c = cropData.crops[id], cl = clim.byYear?.[i]?.[id] ?? clim.crops[id], prev = i ? cropData.crops[cropIds[i - 1]] : null;
     const credit = prev ? prev.n_credit_next : 0;
     const p = pests?.years[i];
     return {

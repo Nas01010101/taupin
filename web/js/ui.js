@@ -52,6 +52,16 @@ export function soilChartSVG(soil, { w = 320, h = 150 } = {}) {
     `<line class="mean" x1="${meanX}" x2="${meanX}" y1="${pad.t}" y2="${h - pad.b}"/>${months}</svg>`;
 }
 
+// Projected trap date and rootworm hatch, one column per year, each with its 80 % range.
+export function forecastHTML(fc) {
+  const t = fc?.trap_12C, c = fc?.crw_hatch;
+  if (!t) return '';
+  const head = t.rows.map(r => `<th scope="col">${esc(r.year)}</th>`).join('');
+  const row = (name, f) => f ? `<tr><th scope="row">${esc(name)}</th>${f.rows.map(r => `<td>${esc(r.date)}<span class="delta">${esc(r.lo)} to ${esc(r.hi)}</span></td>`).join('')}</tr>` : '';
+  return `<div class="table-wrap"><table class="sw small"><caption>Forecast, 80 % range under each date (backtested on ${esc(t.span[0])}-${esc(t.span[1])})</caption>` +
+    `<thead><tr><th scope="col"></th>${head}</tr></thead><tbody>${row('Bait traps', t)}${row('Rootworm hatch', c)}</tbody></table></div>`;
+}
+
 export function trapHTML(tw, soil, evidence) {
   const sign = tw.trend >= 0 ? '+' : '';
   const ww = evidence.some(e => e.kind === 'wireworm');
@@ -59,9 +69,11 @@ export function trapHTML(tw, soil, evidence) {
     `<dl class="facts"><div><dt>Bait traps</dt><dd>${esc(tw.mean12)}<span>${esc(tw.last12)} in ${esc(tw.lastYear)}</span></dd></div>` +
     `<div><dt>Larvae move up</dt><dd>${esc(tw.mean8)}<span>${esc(tw.last8)} in ${esc(tw.lastYear)}</span></dd></div>` +
     (tw.lastCrw ? `<div><dt>Rootworm hatch</dt><dd>${esc(tw.lastCrw)}<span>in ${esc(tw.lastYear)}</span></dd></div>` : '') + `</dl>` +
+    forecastHTML(tw.fc) +
     soilChartSVG(soil) +
     `<details class="more"><summary>Method and sources</summary><p>The trap date is the end of the first 7 days averaging 12 °C or more at 0-10 cm after 1 March. ` +
     `Trend ${sign}${tw.trend.toFixed(2)} ± ${tw.ci.toFixed(2)} days per decade (95 %): no clear shift.</p>` +
+    (tw.fc?.trap_12C ? `<p>Forecast: four models (${Object.entries(tw.fc.trap_12C.errors).map(([k, e]) => `${esc(k)} ${e.toFixed(1)} d`).join(', ')}, mean backtest miss) were fit on the years up to each year from the 11th on and asked for the next 1 to 5 years. The one with the smallest miss is used: ${esc(tw.fc.trap_12C.label)}. The range is the 10th to 90th percentile of its misses at that horizon. No seasonal weather forecast is used.</p>` : '') +
     `<ul class="src"><li>${esc(soil.sources.tsoil)}</li><li>${esc(soil.sources.trap)}</li><li>${esc(soil.sources.crw)}</li></ul></details>`;
 }
 

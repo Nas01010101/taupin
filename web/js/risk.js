@@ -62,12 +62,32 @@ export function riskView(risk, zone, evidence = []) {
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fmt = iso => `${Number(iso.slice(8, 10))} ${MON[Number(iso.slice(5, 7)) - 1]}`;   // same style as soil.json means
 
-export function trapWindow(soil) {
+import { forecast } from './forecast.js';
+
+const doyOf = iso => (Date.parse(iso) - Date.parse(`${iso.slice(0, 4)}-01-01`)) / 864e5 + 1;
+const label = n => { const d = new Date(Date.UTC(2001, 0, Math.round(n))); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+
+// Trap date and rootworm hatch for five years from startYear, from the per-year dates (forecast.js).
+// A live field whose data already holds startYear's date starts the forecast the year after.
+export function trapForecast(soil, startYear, n = 5) {
+  const out = {};
+  for (const k of ['trap_12C', 'crw_hatch']) {
+    const ys = Object.keys(soil.per_year).filter(y => soil.per_year[y][k]).map(Number);
+    if (!ys.length) continue;
+    const first = Math.max(startYear, ys[ys.length - 1] + 1), targets = Array.from({ length: n }, (_, i) => first + i);
+    const f = forecast(ys, ys.map(y => doyOf(soil.per_year[y][k])), targets);
+    if (f) out[k] = { ...f, rows: f.rows.map(r => ({ year: r.year, date: label(r.value), lo: label(r.lo), hi: label(r.hi), n: r.n })) };
+  }
+  return out;
+}
+
+export function trapWindow(soil, startYear) {
   const years = Object.keys(soil.per_year).sort(), last = years[years.length - 1], y = soil.per_year[last];
   return {
     mean12: soil.trap_12C_mean, mean8: soil.larvae_8C_mean, span: soil.years,
     lastYear: last, last12: fmt(y.trap_12C), last8: fmt(y.larvae_8C), lastCrw: y.crw_hatch ? fmt(y.crw_hatch) : null,
     trend: soil.trap_12C_trend_days_per_decade, ci: soil.trap_12C_trend_95ci_days_per_decade,
+    fc: startYear ? trapForecast(soil, startYear) : {},
   };
 }
 

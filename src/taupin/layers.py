@@ -45,7 +45,7 @@ SERIES_NOTES = {"DOV": {"name": "Dorval", "texture": "clay loam on calcareous ti
 WATER = {"name": "Water", "texture": "", "drainage": "", "source": "IRDA map unit EAU"}
 SRC = {
     "hrdem": "NRCan HRDEM lidar DTM and DSM, project QC-600023_52_CMM_2023, 1 m, averaged to 2 m",
-    "hls": "NASA HLS v2 (Landsat 8/9 L30 and Sentinel-2 S30), 30 m",
+    "hls": "NASA HLS v2 (NASA/USGS Landsat 8/9 L30 and ESA Copernicus Sentinel-2 S30), 30 m",
     "landsat": "USGS Landsat 8/9 Collection 2 Level-2 surface temperature (band 10), 100 m thermal, distributed at 30 m",
     "irda": "IRDA, Cartes pédologiques du Québec, sheets 31H12-101 to 202 (study 41, 1:20 000)",
     "cansis": "AAFC CanSIS soil name and layer tables, Quebec v2r20130705",

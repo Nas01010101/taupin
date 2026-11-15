@@ -20,7 +20,7 @@ Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
 ## Inputs
 
-- **Main input: satellite and NASA data.** GPM IMERG rain, SMAP L4 soil moisture, HLS and Landsat
+- **Main input: satellite and NASA data.** GPM IMERG rain, SMAP L4 soil moisture, HLS (NASA Landsat and ESA Sentinel-2) and Landsat
   vegetation and surface temperature, and NASA POWER (MERRA-2) soil temperature drive the 3D field
   layers, the field risk model (logistic, 4 inputs, fitted on 82 Quebec fields from Labrie et al.
   2020, leave-one-field-out AUC 0.80) and the rotation scores.
@@ -49,7 +49,7 @@ The field rank was fitted on Quebec fields; where an input falls outside that ra
 and the rank is an extrapolation. The 3D terrain (NRCan lidar) and the soil map are one Quebec field.
 
 Next: trap counts from Ontario, the Prairies and the US to refit the rank per region, USGS 3DEP lidar
-for US fields, Canadian Space Agency RADARSAT Constellation soil moisture, then any country with trap
+for US fields, Canadian Space Agency RADARSAT Constellation soil moisture (being added), then any country with trap
 counts, soil maps and terrain.
 
 ## Two audiences
@@ -176,6 +176,14 @@ flowchart LR
 - `scripts/capture.mjs` drives headless Chrome for screenshots and demo frames;
   `scripts/make_gif.py` turns the frames into `docs/assets/demo.gif`.
 
+Forecasts (`web/js/forecast.js`): the trap week, rootworm hatch and the rotation water columns
+for the next five seasons come from four models fitted on the field's yearly history (mean of all
+years, mean of the last 10, straight-line trend, average of the two). Each one is scored by a
+rolling-origin backtest (fit on the years up to t, predict t + 1 to t + 5), the lowest error is
+used, and the 80 % range is the 10th to 90th percentile of that model's own backtest misses. On
+the demo field (POWER TSOIL1 1995-2025) the mean wins: trap date miss 6.9 days against 8.4 for the
+trend, rootworm hatch 3.8 against 4.2. No weather forecast is used.
+
 Tests: `uv run pytest` (engine, soil, bake, classifier parity, server, web checks) and
 `node --test web/test/*.test.mjs` (preprocessing, softmax, abstain, risk view, renderers). The
 browser preprocessing matches the Python classifier on golden inputs.
@@ -215,7 +223,7 @@ Class counts, the threshold table and the split method are in `model/MODEL_CARD.
 | NASA POWER daily point API (MERRA-2): `TSOIL1`, `GWETROOT` | trap date; two inputs of the field risk model | NASA open data |
 | NASA GPM IMERG daily rain via NASA POWER (`IMERG_PRECTOT`), with `T2M_MAX`, `T2M_MIN`, 2001 to 2025 | rotation water need, rain, heavy-rain days on bare soil | NASA open data |
 | NASA SMAP L4 analysed root-zone soil moisture via GIBS, April 2015 to September 2025 | check of the POWER wetness input; soil moisture chart | NASA open data |
-| NASA HLS v2.0 (L30 and S30), 23 clear summer scenes, 2020 to 2025 | vegetation layer (NDVI) | NASA open data |
+| NASA HLS v2.0 (L30 from Landsat 8/9, S30 from ESA Copernicus Sentinel-2), 23 clear summer scenes, 2020 to 2025 | vegetation layer (NDVI) | NASA open data |
 | USGS Landsat 8/9 Collection 2 Level-2, 46 clear April and May scenes, 2016 to 2025 | spring surface temperature layer | public domain |
 | NRCan HRDEM lidar, 1 m, 2023 | relief, canopy height, slope, wetness index | Open Government Licence - Canada |
 | IRDA soil map (1:20 000) and AAFC CanSIS tables | soil units and their texture | see `DATA_SOURCES.md` |

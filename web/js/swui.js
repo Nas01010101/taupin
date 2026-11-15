@@ -88,7 +88,8 @@ export function climateHTML(clim, cropData, weather, where) {
   }).join('');
   return `<p class="small">Daily rain from NASA GPM IMERG and air temperature from NASA POWER, ${clim.years[0]} to ${clim.years[1]} (${clim.n} years)${where ? ` at ${esc(where)}` : ''}.
 Water need is FAO-56 Hargreaves reference evapotranspiration times the crop coefficient, from the sowing day (10-day mean air temperature rule) to harvest.
-The dry year is the 1-in-5 worst shortfall of rain against need. Soil water stored at sowing and irrigation are not counted.
+The dry year is the 1-in-5 worst shortfall of rain against need.
+${clim.proj?.targets?.length ? `The rotation table uses projections for ${clim.proj.targets[0]} to ${clim.proj.targets[clim.proj.targets.length - 1]}, one per rotation year, from the model with the smallest backtest miss (${esc([...new Set(Object.values(clim.proj.models))].join(', ') || 'none')}); the table below is the ${clim.years[0]} to ${clim.years[1]} history they rest on.` : ''} Soil water stored at sowing and irrigation are not counted.
 Heavy rain is a day with ${fmt(cropData.heavy_rain_mm)} mm or more, April to November, before about 10 % crop cover or after harvest.</p>
 <div class="table-wrap"><table class="sw small"><thead><tr><th scope="col">Crop</th><th scope="col">Sown about</th><th scope="col">Harvest about</th><th scope="col">Need, mm</th><th scope="col">Rain, median mm</th><th scope="col">Dry year</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
