@@ -381,6 +381,7 @@ function bind() {
   $('#rank-light').addEventListener('change', e => { state.light = e.target.checked; renderRank(); });
   $('#own').addEventListener('submit', e => { e.preventDefault(); loadOwn(parseCoords($('#own-lat').value, $('#own-lon').value)); });
   $('#own-reset').addEventListener('click', () => { try { localStorage.removeItem(OWN_KEY); } catch { /* nothing stored */ } useField(null); });
+  $('#regions').addEventListener('click', e => { const b = e.target.closest('button[data-lat]'); if (b) loadOwn(parseCoords(b.dataset.lat, b.dataset.lon)); });
   $('#own-here').addEventListener('click', () => {
     if (!navigator.geolocation) { $('#own-status').textContent = 'This browser gives no position. Type the coordinates.'; return; }
     navigator.geolocation.getCurrentPosition(p => loadOwn(parseCoords(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))),

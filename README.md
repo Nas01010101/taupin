@@ -1,8 +1,8 @@
-<p align="center"><img src="docs/assets/logo.svg" width="72" alt="Taupin logo: a barley stalk and a leaf with a click beetle"></p>
+<p align="center"><img src="docs/assets/logo.svg" width="120" alt="Taupin logo: a barley stalk and a leaf with a click beetle"></p>
 
 # Taupin
 
-Taupin helps a Quebec grain farmer and their agronomist scout a field for wireworms before buying
+Taupin helps a grain farmer in Canada or the US and their agronomist scout a field for wireworms before buying
 insecticide-coated seed. It dates the bait-trap week from NASA POWER soil temperature, places the
 traps on a 3D field built from lidar, NASA HLS, Landsat and the soil map, takes the counts, names a
 soil insect from a photo, and compares four crop rotations over five years for water, soil loss,
@@ -11,9 +11,12 @@ runs in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
-![Taupin: the 3D field with a wireworm photo pinned on it, next to the risk table](docs/assets/hero.png)
+<p align="center">
+<img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">
+<img src="docs/assets/networks.svg" width="49%" alt="The two models: the field model takes NASA POWER soil temperature and wetness plus two farmer inputs; the photo model is DINOv2-S with an 8-class head">
+</p>
 
-![Demo: a photo is classified, pinned on the field, and the risk table shows what it changes](docs/assets/demo.gif)
+![Taupin: the 3D field with a wireworm photo pinned on it, next to the risk table](docs/assets/hero.png)
 
 ## Inputs
 
@@ -26,11 +29,28 @@ Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
   around the pin and reweights the rotation scores. Below 0.892 confidence the answer is "unclear"
   and the photo is meant for the lab.
 
-## Coverage and roadmap
+## Coverage: North America
 
-- Today: Quebec. The field risk model, the lidar terrain (NRCan) and the soil map are Quebec data.
-- Next: Ontario field data and Canadian Space Agency RADARSAT Constellation soil moisture.
-- Then North America, then any country with trap counts, soil maps and terrain to fit the model.
+NASA POWER and GPM IMERG cover every point in North America, so the trap week, the field rank and
+the rotation water columns run for any coordinates the farmer types or for one of six farm regions
+on the first screen. The table is `web/data/regions.json`, made by `node scripts/regions.mjs` with
+the code the page runs (2026-11-15).
+
+| Region | Lat, lon | Trap week (soil at 12 °C) | Field rank (year) | Inputs outside the Quebec training range | GPM rain, mm a year, 2001 to 2025 |
+|---|---|---|---|---|---|
+| Montérégie, Quebec | 45.63, -72.96 | 15 May | low (2026) | none | 824 to 1,334 |
+| Chatham-Kent, Ontario | 42.4, -82.18 | 30 Apr | low (2026) | none | 738 to 1,387 |
+| Prince Edward Island | 46.35, -63.3 | 29 May | low (2026) | none | 865 to 1,515 |
+| Saskatoon, Saskatchewan | 52.13, -106.67 | 19 May | high (2026) | gwet_spring | 207 to 724 |
+| Story County, Iowa | 42.03, -93.62 | 23 Apr | high (2026) | gwet_spring | 645 to 1,317 |
+| Magic Valley, Idaho | 42.56, -114.46 | 8 May | low (2026) | gwet_spring, tsoil_winter_min_c | 148 to 472 |
+
+The field rank was fitted on Quebec fields; where an input falls outside that range the page says so
+and the rank is an extrapolation. The 3D terrain (NRCan lidar) and the soil map are one Quebec field.
+
+Next: trap counts from Ontario, the Prairies and the US to refit the rank per region, USGS 3DEP lidar
+for US fields, Canadian Space Agency RADARSAT Constellation soil moisture, then any country with trap
+counts, soil maps and terrain.
 
 ## Two audiences
 

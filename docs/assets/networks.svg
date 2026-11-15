@@ -1,0 +1,60 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect width='800' height='450' rx='8' fill='#ffffff'/>
+<text x='24' y='34' font-size='17' font-weight='700' fill='#1b2a1b'>Field model: NASA data in, wireworm risk out</text>
+<text x='24' y='54' font-size='12' fill='#5c5c5c'>logistic, 4 inputs, fitted on 82 Quebec fields (Labrie et al. 2020), leave-one-field-out AUC 0.80</text>
+<line x1='250' y1='86' x2='470' y2='140' stroke='#2a6fb0' stroke-width='2' opacity='.7'/>
+<circle cx='250' cy='86' r='9' fill='#2a6fb0'/>
+<text x='232' y='84' font-size='13' text-anchor='end' fill='#1b1b1b'>winter min soil temp</text><text x='232' y='98' font-size='11' text-anchor='end' fill='#2a6fb0'>NASA POWER TSOIL1</text>
+<line x1='250' y1='122' x2='470' y2='140' stroke='#2a6fb0' stroke-width='2' opacity='.7'/>
+<circle cx='250' cy='122' r='9' fill='#2a6fb0'/>
+<text x='232' y='120' font-size='13' text-anchor='end' fill='#1b1b1b'>spring root-zone wetness</text><text x='232' y='134' font-size='11' text-anchor='end' fill='#2a6fb0'>NASA POWER GWETROOT</text>
+<line x1='250' y1='158' x2='470' y2='140' stroke='#8a5a00' stroke-width='2' opacity='.7'/>
+<circle cx='250' cy='158' r='9' fill='#8a5a00'/>
+<text x='232' y='156' font-size='13' text-anchor='end' fill='#1b1b1b'>sand or sandy loam</text><text x='232' y='170' font-size='11' text-anchor='end' fill='#8a5a00'>farmer</text>
+<line x1='250' y1='194' x2='470' y2='140' stroke='#8a5a00' stroke-width='2' opacity='.7'/>
+<circle cx='250' cy='194' r='9' fill='#8a5a00'/>
+<text x='232' y='192' font-size='13' text-anchor='end' fill='#1b1b1b'>years in hay</text><text x='232' y='206' font-size='11' text-anchor='end' fill='#8a5a00'>farmer</text>
+<circle cx='470' cy='140' r='16' fill='#2f5d2f'/><text x='470' y='145' font-size='13' fill='#fff' text-anchor='middle'>σ</text>
+<line x1='486' y1='140' x2='560' y2='140' stroke='#2f5d2f' stroke-width='2'/>
+<text x='570' y='136' font-size='14' font-weight='700' fill='#1b1b1b'>field rank</text><text x='570' y='154' font-size='12' fill='#5c5c5c'>low, mid or high: which fields to trap first</text>
+<line x1='24' y1='236' x2='776' y2='236' stroke='#e2e2e2'/>
+<text x='24' y='266' font-size='17' font-weight='700' fill='#1b2a1b'>Photo model: a phone photo in, an animal name out</text>
+<text x='24' y='286' font-size='12' fill='#5c5c5c'>DINOv2-S (Meta, Apache-2.0), ViT-S/14 fine-tuned, int8 ONNX, runs in the browser</text>
+<rect x='24' y='310' width='92' height='92' rx='6' fill='#e9efe6' stroke='#9ab09a'/><text x='70' y='352' font-size='12' text-anchor='middle' fill='#1b2a1b'>photo</text><text x='70' y='368' font-size='11' text-anchor='middle' fill='#5c5c5c'>224 x 224</text>
+<line x1='116' y1='356' x2='146' y2='356' stroke='#2f5d2f' stroke-width='2'/>
+<rect x='150' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.45'/>
+<rect x='170' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.49'/>
+<rect x='190' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.54'/>
+<rect x='210' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.58'/>
+<rect x='230' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.63'/>
+<rect x='250' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.68'/>
+<rect x='270' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.72'/>
+<rect x='290' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.77'/>
+<rect x='310' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.81'/>
+<rect x='330' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.85'/>
+<rect x='350' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.90'/>
+<rect x='370' y='318' width='14' height='76' rx='3' fill='#2a6fb0' opacity='0.95'/>
+<text x='268' y='414' font-size='11' text-anchor='middle' fill='#5c5c5c'>12 transformer blocks, 384 features</text>
+<line x1='392' y1='356' x2='430' y2='356' stroke='#2f5d2f' stroke-width='2'/>
+<line x1='430' y1='356' x2='470' y2='304.0' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='304.0' r='5' fill='#b8432f'/><text x='484' y='308.0' font-size='11' fill='#1b1b1b'>wireworm</text>
+<line x1='430' y1='356' x2='470' y2='318.5' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='318.5' r='5' fill='#b8432f'/><text x='484' y='322.5' font-size='11' fill='#1b1b1b'>click beetle</text>
+<line x1='430' y1='356' x2='470' y2='333.0' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='333.0' r='5' fill='#b8432f'/><text x='484' y='337.0' font-size='11' fill='#1b1b1b'>corn rootworm</text>
+<line x1='430' y1='356' x2='470' y2='347.5' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='347.5' r='5' fill='#b8432f'/><text x='484' y='351.5' font-size='11' fill='#1b1b1b'>white grub</text>
+<line x1='430' y1='356' x2='470' y2='362.0' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='362.0' r='5' fill='#2f5d2f'/><text x='484' y='366.0' font-size='11' fill='#1b1b1b'>ground beetle</text>
+<line x1='430' y1='356' x2='470' y2='376.5' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='376.5' r='5' fill='#2f5d2f'/><text x='484' y='380.5' font-size='11' fill='#1b1b1b'>millipede</text>
+<line x1='430' y1='356' x2='470' y2='391.0' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='391.0' r='5' fill='#2f5d2f'/><text x='484' y='395.0' font-size='11' fill='#1b1b1b'>earthworm</text>
+<line x1='430' y1='356' x2='470' y2='405.5' stroke='#9ab09a' stroke-width='1'/>
+<circle cx='474' cy='405.5' r='5' fill='#2f5d2f'/><text x='484' y='409.5' font-size='11' fill='#1b1b1b'>other</text>
+<text x='600' y='330' font-size='14' font-weight='700' fill='#1b1b1b'>name and confidence</text>
+<text x='600' y='350' font-size='12' fill='#5c5c5c'>red: crop pest, green: not a pest</text>
+<text x='600' y='370' font-size='12' fill='#5c5c5c'>below 0.892: "unclear",</text>
+<text x='600' y='386' font-size='12' fill='#5c5c5c'>photo goes to the lab</text>
+<text x='600' y='406' font-size='12' fill='#5c5c5c'>a pin on the 3D field</text>
+</svg>
