@@ -66,6 +66,7 @@
       <label class="small"><input id="show-pocket" type="checkbox"> Show the low wet pocket</label>
     </div>
     <div id="legend" class="layer-legend small" aria-live="polite"></div>
+    <div id="crop-hist" class="layer-legend small"></div>
     <div id="mapnote" class="mapnote"></div>
     <p class="muted small">Drag to turn. Click a pin to read it, move it or delete it. Click the ground to place the photo pin, or a note when Add a note on the map is on. Height drawn 2 times, trees at their lidar height; the cut edge marks 10 cm, the depth the trap date is read at.</p>
     <section id="sec-traps" aria-labelledby="h-traps">
@@ -100,6 +101,8 @@
           <button type="button" class="ghost" id="own-reset" hidden>Back to the demo field</button>
         </div>
       </form>
+      <p class="small">Quebec fields modelled in 3D from HRDEM lidar, HLS and Landsat, IRDA soil maps and the AAFC crop inventory:</p>
+      <div class="zones" id="fields"></div>
       <p class="small">Or try a farm region. NASA POWER covers all of North America; the field rank was fitted on Quebec fields, so the page says when an input is outside that range.</p>
       <div class="zones" id="regions">
         <button type="button" class="seg" data-lat="45.63" data-lon="-72.96">Montérégie, QC</button>

@@ -23,7 +23,7 @@ test('decode applies offset and scale, nodata is NaN', () => {
 });
 
 test('baked layers decode to their manifest range', () => {
-  for (const v of VIEWS) assert.ok(L[v.layer], v.layer);
+  for (const v of VIEWS) if (v.key !== 'crop') assert.ok(L[v.layer], v.layer);   // the park has no crop map
   const h = load('height');
   assert.equal(h.length, field.parcel.size ** 2);
   let lo = Infinity, hi = -Infinity;
@@ -75,4 +75,21 @@ test('no soil unit or zone is drawn in a blue that reads as water', () => {
   assert.equal(new Set(land).size, land.length);
   if (water) assert.ok(!land.includes(colorOf(L.soil, water.id).join()));   // not every square has a water unit
   assert.ok(!land.includes('90,156,214'));
+});
+
+test('baked Quebec fields carry every view, and crop cells are known ACI classes', () => {
+  const ids = JSON.parse(readFileSync(`${web}data/fields/index.json`, 'utf8')).map(f => f.id);
+  assert.ok(ids.length >= 3);
+  for (const id of ids) {
+    const f = JSON.parse(readFileSync(`${web}data/fields/${id}/field.json`, 'utf8'));
+    const FL = Object.fromEntries(f.layers.map(l => [l.key, l]));
+    for (const v of VIEWS) assert.ok(FL[v.layer], `${id} ${v.layer}`);
+    const b = readFileSync(`${web}data/fields/${id}/${FL.crop.file}`);
+    const crop = decode(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), FL.crop.encoding);
+    const known = new Set(FL.crop.classes.map(c => c.id));
+    assert.equal(crop.length, FL.crop.size ** 2);
+    for (const x of crop) assert.ok(Number.isNaN(x) || known.has(x), `${id} class ${x}`);
+    for (const c of FL.crop.classes) assert.ok(colorOf(FL.crop, c.id), `${id} colour ${c.id}`);
+    assert.ok(f.crops.rotation && f.crops.per_year[f.crops.last_year], id);
+  }
 });

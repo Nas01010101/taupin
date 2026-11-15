@@ -29,6 +29,17 @@ class Grid:
         """UTM coordinates of the centre of cell (row, col)."""
         return (self.x0 + (col + 0.5) * self.res, self.y_top - (row + 0.5) * self.res)
 
+    @classmethod
+    def around(cls, lat: float, lon: float, side_m: float = 600.0, res: float = 2.0,
+               crs: str = "EPSG:32618") -> "Grid":
+        """A square of `side_m` centred on (lat, lon), its corner snapped to 30 m (the HLS and
+        crop inventory pixel) so the 30 m reads line up with whole satellite pixels."""
+        from rasterio.warp import transform
+        xs, ys = transform("EPSG:4326", crs, [lon], [lat])
+        x0 = round((xs[0] - side_m / 2) / 30.0) * 30.0
+        y_top = round((ys[0] + side_m / 2) / 30.0) * 30.0
+        return cls(x0, y_top, res, round(side_m / res), crs)
+
     def coarse(self, res: float) -> "Grid":
         """Same extent at a coarser cell size (for 10-30 m satellite reads)."""
         n = round(self.size * self.res / res)

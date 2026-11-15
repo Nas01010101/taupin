@@ -1,0 +1,32 @@
+[
+ {
+  "id": "laval",
+  "name": "Laval-Est, Saint-François (QC)",
+  "lat": 45.6917,
+  "lon": -73.5504,
+  "open_ha": 31.4,
+  "rotation": "A_continuous_corn",
+  "rotation_match": "4 of 5",
+  "last_crop": "corn"
+ },
+ {
+  "id": "eustache",
+  "name": "Saint-Eustache (QC)",
+  "lat": 45.6459,
+  "lon": -73.9212,
+  "open_ha": 27.6,
+  "rotation": "F_soy_wheat",
+  "rotation_match": "3 of 5",
+  "last_crop": "soybean"
+ },
+ {
+  "id": "mirabel",
+  "name": "Mirabel (QC)",
+  "lat": 45.706,
+  "lon": -73.9829,
+  "open_ha": 32.7,
+  "rotation": "B_corn_soy_wheat",
+  "rotation_match": "4 of 5",
+  "last_crop": "soybean"
+ }
+]

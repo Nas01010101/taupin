@@ -187,6 +187,8 @@ details.more summary { cursor: pointer; padding: var(--s1) 0; }
 .layer-legend svg { flex: none; border-radius: 3px; vertical-align: -1px; }
 .layer-legend .ramp { display: flex; gap: var(--s3); flex-wrap: wrap; }
 .layer-legend p { margin: var(--s1) 0 0; font-size: var(--t-xs); color: var(--muted); }
+.layer-legend .crop-strip { display: flex; flex-wrap: wrap; gap: 2px; }
+.layer-legend .crop-strip li { flex-direction: column; align-items: center; gap: 0; }
 #sec-traps { margin-top: var(--s4); }
 #sec-traps h3 { margin: 0 0 var(--s1); }
 .traps { width: 100%; border-collapse: collapse; font-size: var(--t-xs); font-variant-numeric: tabular-nums; }

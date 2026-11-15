@@ -171,6 +171,11 @@ flowchart LR
   end
 ```
 
+Another field is baked with `python -m taupin.fetch_layers --work <dir> --lat <lat> --lon <lon> --way
+<osm way> --hrdem-id <project>`, then `python -m taupin.layers --work <dir> --irda <dir> --cansis <dir>
+--out web/data/fields/<id> --name <name>`. It
+and opens with `?field=<id>` once listed in `web/data/fields/index.json`.
+
 - `src/taupin/`: risk engine, POWER soil-temperature trap window, field layers, bake, local server,
   CLI classifier.
 - `risk/`: the field risk model: digitized counts, NASA POWER features, fit and metrics.
@@ -271,6 +276,10 @@ Gallery photos (Wikimedia Commons):
 - A photo is a first sort, not a count. A photo that shows no soil animal can still get a
   confident name: 92 of the 157 images removed from the outside test set were answered instead of
   "unclear" (`model/MODEL_CARD.md`).
+- Three Quebec farm fields are baked besides the park (Laval, Saint-Eustache, Mirabel). Their crop
+  history is the AAFC Annual Crop Inventory at 30 m: the yearly crop is the majority class over the
+  open cells, so a share near 50 % means a split field. The IRDA soil map used covers sheet 31H12
+  only, and HRDEM lidar has holes between projects (no coverage at Calumet).
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.
 - Not a NASA product. Uses NASA open data.

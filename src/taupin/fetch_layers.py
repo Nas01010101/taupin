@@ -4,15 +4,19 @@ Sources (all open, no login):
   NRCan HRDEM lidar 1 m DTM and DSM (CMM 2023 project), read through windowed COG requests
   NASA HLS v2 (L30 + S30) red/NIR/Fmask, June to August, several scenes per year
   USGS Landsat 8/9 Collection 2 Level-2 surface temperature (lwir11) + QA_PIXEL, April to May
-  OpenStreetMap outline of the park (Overpass API, ODbL)
+  OpenStreetMap outline of the park or farm field (Overpass API, ODbL)
+  AAFC Annual Crop Inventory 2009 to 2025, 30 m (crop grown each year)
 HLS and Landsat come from Microsoft Planetary Computer. Every read is a WarpedVRT window: only
 the COG blocks over the 600 m parcel are fetched.
 
     uv run --extra bake python -m taupin.fetch_layers --work /path/to/cache
+    uv run --extra bake python -m taupin.fetch_layers --work /path/to/farm --lat 45.69 --lon -73.55 --way 232948334
 """
 from __future__ import annotations
 
 import argparse
+import functools
+import io
 import json
 import os
 from pathlib import Path
@@ -29,6 +33,10 @@ HRDEM_ID = "QC-600023_52_CMM_2023-1m"
 HRDEM_URL = "https://canelevation-dem.s3.ca-central-1.amazonaws.com/hrdem-lidar/{id}-{kind}.tif"
 OVERPASS = "https://overpass-api.de/api/interpreter"
 PARK_WAY = 542903996    # OpenStreetMap way: Parc-nature du Bois-de-Liesse (leisure=nature_reserve)
+ACI_URL = "https://agriculture.canada.ca/imagery-images/rest/services/annual_crop_inventory/{year}/ImageServer/exportImage"
+ACI_CLASSES = ("https://agriculture.canada.ca/atlas/data_donnees/annualCropInventory/supportdocument_documentdesupport/"
+               "aci_crop_classifications_iac_classifications_des_cultures.csv")
+ACI_YEARS = range(2009, 2026)
 GDAL_ENV = dict(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="3")
 if os.environ.get("CURL_CA_BUNDLE"):
     GDAL_ENV["GDAL_CURL_CA_BUNDLE"] = GDAL_ENV["CURL_CA_BUNDLE"] = os.environ["CURL_CA_BUNDLE"]
@@ -154,30 +162,67 @@ def landsat_lst(grid: Grid, work: Path, years=range(2016, 2026), min_valid: floa
     return meta
 
 
-def park(grid: Grid, work: Path) -> dict:
-    """Park outline as [lon, lat] pairs. Traps and tree crowns stay inside it."""
-    import urllib.parse
+def _get(url: str, data: bytes | None = None, timeout: int = 60) -> bytes:
     import urllib.request
-    body = urllib.parse.urlencode({"data": f"[out:json];way({PARK_WAY});out geom;"}).encode()
-    req = urllib.request.Request(OVERPASS, data=body, headers={"User-Agent": "taupin-bake"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        way = json.load(r)["elements"][0]
-    meta = dict(way=PARK_WAY, name=way["tags"]["name"],
-                ring=[[pt["lon"], pt["lat"]] for pt in way["geometry"]])
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": "taupin-bake"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def park(grid: Grid, work: Path, way: int = PARK_WAY) -> dict:
+    """Park or field outline as [lon, lat] pairs. Traps and tree crowns stay inside it."""
+    import urllib.parse
+    body = urllib.parse.urlencode({"data": f"[out:json];way({way});out geom;"}).encode()
+    el = json.loads(_get(OVERPASS, body))["elements"][0]
+    tags = el.get("tags", {})
+    meta = dict(way=way, name=tags.get("name") or f"{tags.get('landuse', 'field')} (OpenStreetMap way {way})",
+                landuse=tags.get("landuse") or tags.get("leisure"),
+                ring=[[pt["lon"], pt["lat"]] for pt in el["geometry"]])
     (work / "park.json").write_text(json.dumps(meta))
     return meta
 
 
+def crops(grid: Grid, work: Path, years=ACI_YEARS, log=print) -> dict:
+    """AAFC Annual Crop Inventory class codes on the 30 m grid, one band per year, read through
+    the ImageServer exportImage call in the grid's own UTM extent (nearest neighbour)."""
+    import csv
+    g = grid.coarse(30.0)
+    w, s, e, n = g.bounds
+    stack = []
+    for y in years:
+        q = (f"?bbox={w},{s},{e},{n}&bboxSR=32618&imageSR=32618&size={g.size},{g.size}&format=tiff"
+             "&pixelType=U8&interpolation=RSP_NearestNeighbor&f=image")
+        with rasterio.MemoryFile(_get(ACI_URL.format(year=y) + q)) as m, m.open() as r:
+            stack.append(r.read(1))
+        log(f"ACI {y}: classes {sorted(set(stack[-1].ravel().tolist()))}")
+    write_tif(work / "aci.tif", np.stack(stack).astype(np.uint8), g, nodata=0)
+    rows = csv.DictReader(io.StringIO(_get(ACI_CLASSES).decode("latin1")))
+    names = {int(r["Code"]): r["Label"] for r in rows}
+    meta = dict(years=list(years), classes=names, url=ACI_URL.format(year="{year}"), grid_res_m=g.res)
+    (work / "aci_meta.json").write_text(json.dumps(meta, indent=1))
+    return {"years": [min(years), max(years)], "classes": len(names)}
+
+
 def main(argv=None) -> None:
+    global HRDEM_ID
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--work", type=Path, required=True, help="cache directory for the GeoTIFFs")
-    p.add_argument("--only", choices=["hrdem", "hls", "landsat", "park"], action="append")
+    p.add_argument("--only", choices=["hrdem", "hls", "landsat", "park", "crops"], action="append")
+    p.add_argument("--lat", type=float, help="centre of a 600 m square (default: the park parcel)")
+    p.add_argument("--lon", type=float)
+    p.add_argument("--way", type=int, default=PARK_WAY, help="OpenStreetMap way of the field outline")
+    p.add_argument("--hrdem-id", default=HRDEM_ID, help="HRDEM lidar project id")
     a = p.parse_args(argv)
     a.work.mkdir(parents=True, exist_ok=True)
-    steps = {"hrdem": hrdem, "hls": hls_ndvi, "landsat": landsat_lst, "park": park}
+    HRDEM_ID = a.hrdem_id
+    grid = Grid.around(a.lat, a.lon) if a.lat is not None else PARCEL
+    (a.work / "grid.json").write_text(json.dumps(dict(x0=grid.x0, y_top=grid.y_top, res=grid.res, size=grid.size,
+                                                      lat=a.lat, lon=a.lon)))
+    steps = {"hrdem": hrdem, "hls": hls_ndvi, "landsat": landsat_lst,
+             "park": functools.partial(park, way=a.way), "crops": crops}
     for name in a.only or list(steps):
-        meta = steps[name](PARCEL, a.work)
-        print(name, json.dumps(meta)[:300])
+        meta = steps[name](grid, a.work)
+        print(name, json.dumps(meta)[:300], flush=True)
 
 
 if __name__ == "__main__":

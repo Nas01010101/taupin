@@ -1,7 +1,7 @@
 // HTML string renderers. Pure (no DOM access) so node --test can check them. Every value that
 // comes from a file, the model or the user goes through esc() before it reaches markup.
 import { UNCLEAR, formatAnswer } from './classify.js';
-import { legend, resolutionText } from './layers.js';
+import { GROUP, legend, resolutionText } from './layers.js';
 import { GENUS_LABEL, LAB, LIFTS, THRESHOLDS, liftLine, verdict } from './scout.js';
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -235,4 +235,21 @@ function countFormHTML(sheet) {
 export function countResultHTML(s, minTraps) {
   const lines = s.lifts.filter(Boolean).map(l => `<li${l.reached ? ' class="warn-t"' : ''}>${esc(liftLine(l))}</li>`).join('');
   return (lines ? `<ul class="lifts small">${lines}</ul>` : '') + `<p class="${s.reached ? 'callout' : 'small'}">${esc(verdict(s, minTraps))}</p>`;
+}
+
+// Crop history strip: one swatch per year (AAFC ACI majority class over the open cells, with
+// the share of cells that class covers), then the rotation it matches and the model inputs.
+export function cropHistHTML(crops, names = {}) {
+  if (!crops) return '';
+  const years = Object.keys(crops.per_year).sort();
+  const cells = years.map(y => {
+    const c = crops.per_year[y];
+    return `<li title="${esc(`${y}: ${c.name}, ${Math.round(c.share * 100)} % of the open cells`)}">${swatch(GROUP[c.group] ?? GROUP.other)}<span>${esc(y.slice(2))}</span></li>`;
+  }).join('');
+  const last = crops.per_year[crops.last_year];
+  return `<strong>Crop history, ${esc(years[0])} to ${esc(years[years.length - 1])}</strong><ul class="crop-strip">${cells}</ul>`
+    + `<p>Last year: ${esc(last?.name ?? 'no crop class')}${last ? `, ${Math.round(last.share * 100)} % of the open cells` : ''}. `
+    + `Closest rotation: ${esc(names[crops.rotation] ?? crops.rotation)} (${esc(crops.rotation_match)} recent years agree), preset below. `
+    + `Grass or forage years in the last five: ${esc(crops.forage_years_last5)}, preset in the field rank. Corn years in a row at the end: ${esc(crops.corn_run)}. `
+    + `A share near 50 % means the field was split between two crops that year. ${esc(crops.source)}.</p>`;
 }

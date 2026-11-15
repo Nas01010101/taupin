@@ -24,7 +24,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import terrain, zones
+from . import crophist, terrain, zones
 from .grid import PARCEL, Grid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +34,9 @@ POCKET_PCT = 15         # lowest 15 % of parcel cells by lidar height: the "low 
 N_ZONES = 4
 OPEN_FRAC = 0.6
 OPEN_NDVI = 0.65        # mean summer NDVI under 0.65 at 30 m here is road, rail or roof
+# Row crops are bare until late June, so a cropped field averages far below a meadow; under 0.35
+# at 30 m is still road, yard or roof (Taupin choice, checked on the Laval field).
+OPEN_NDVI_FARM = 0.35
 EDGE_M = 15.0           # no trap within 15 m of the parcel edge (Taupin choice; RAP gives none)
 DRAINAGE = {"VR": "very rapidly drained", "R": "rapidly drained", "W": "well drained",
             "MW": "moderately well drained", "I": "imperfectly drained", "P": "poorly drained",
@@ -50,6 +53,7 @@ SRC = {
     "irda": "IRDA, Cartes pédologiques du Québec, sheets 31H12-101 to 202 (study 41, 1:20 000)",
     "cansis": "AAFC CanSIS soil name and layer tables, Quebec v2r20130705",
     "osm": "OpenStreetMap contributors (ODbL)",
+    "aci": "AAFC Annual Crop Inventory, 30 m (Open Government Licence - Canada)",
     "rap": "RAP Grandes cultures, Méthode standard de dépistage des vers fil-de-fer (Agri-Réseau doc. 115269, 16 April 2025)",
 }
 
@@ -159,7 +163,7 @@ def park_mask(path: Path, grid: Grid) -> tuple[np.ndarray, dict | None]:
     xs, ys = transform("EPSG:4326", grid.crs, *map(list, zip(*meta["ring"])))
     ring = {"type": "Polygon", "coordinates": [list(zip(xs, ys))]}
     m = rasterize([(ring, 1)], out_shape=(grid.size, grid.size), transform=grid.transform()).astype(bool)
-    return m, {"name": meta["name"], "area_ha": round(float(m.sum()) * grid.res ** 2 / 1e4, 1),
+    return m, {"name": meta["name"], "landuse": meta.get("landuse", "nature_reserve"), "area_ha": round(float(m.sum()) * grid.res ** 2 / 1e4, 1),
                "source": f"{SRC['osm']}, way {meta['way']}"}
 
 
@@ -176,7 +180,7 @@ def _dates(meta: dict) -> list[str]:
 
 
 def bake_layers(work: Path, out: Path, grid: Grid, soil_shps: list[Path], cansis_dirs: list[Path],
-                n_traps: int = zones.RAP_MIN_TRAPS, n_zones: int = N_ZONES) -> dict:
+                n_traps: int = zones.RAP_MIN_TRAPS, n_zones: int = N_ZONES, site: dict = SITE) -> dict:
     res, n = grid.res, grid.size
     dtm = read_tif(work / "hrdem_dtm.tif")[0]
     dsm = read_tif(work / "hrdem_dsm.tif")[0]
@@ -200,15 +204,17 @@ def bake_layers(work: Path, out: Path, grid: Grid, soil_shps: list[Path], cansis
     water = {u["id"] for u in units if all(c["name"] == "Water" for c in u["components"])}
     # Trappable ground: under tree height, with at least 60 % such cells in the 30 m around it
     # (drops lawns between houses and road verges), green in summer at 30 m (drops pavement),
-    # on a mapped soil unit, inside the park and EDGE_M in from the square's edge. Thresholds
+    # on a mapped soil unit, inside the park or field outline and EDGE_M in from the square's edge. Thresholds
     # are Taupin choices.
     park, park_info = park_mask(work / "park.json", grid)
+    farm = (park_info or {}).get("landuse") == "farmland"
+    min_ndvi = OPEN_NDVI_FARM if farm else OPEN_NDVI
     low = chm < terrain.TREE_MIN_M
     edge = int(EDGE_M / res)
     inside = np.zeros_like(low)
     inside[edge:-edge, edge:-edge] = True
     open_ = (low & (terrain.box_mean(low.astype(float), int(SAT_RES / res) | 1) >= OPEN_FRAC)
-             & (np.kron(ndvi, np.ones((up, up))) >= OPEN_NDVI)
+             & (np.kron(ndvi, np.ones((up, up))) >= min_ndvi)
              & (soil > 0) & ~np.isin(soil, list(water)) & inside & park)
     feats = {"twi": terrain.box_mean(twi, int(SAT_RES / res) | 1),
              "ndvi": np.kron(ndvi, np.ones((up, up))), "lst": np.kron(lst_anom, np.ones((up, up)))}
@@ -268,29 +274,48 @@ def bake_layers(work: Path, out: Path, grid: Grid, soil_shps: list[Path], cansis
                                                 "note": "classes for spreading traps; not a risk prediction"},
             zone == 0),
     ]
+    crops = None
+    if (work / "aci.tif").exists():
+        aci_meta = json.loads((work / "aci_meta.json").read_text())
+        aci = read_tif(work / "aci.tif").astype(int)
+        k30 = n // aci.shape[1]
+        mask30 = block_mean(open_.astype(float), k30) >= 0.5
+        hist = crophist.per_year(aci, aci_meta["years"], mask30, aci_meta["classes"])
+        if hist:
+            crops = {"per_year": hist, **crophist.summary(hist),
+                     "source": f"{SRC['aci']}, {min(hist)} to {max(hist)}; crop = most common class over the open cells"}
+            last = aci[-1].astype(float)
+            present = sorted({int(c) for c in np.unique(last) if c > 0})
+            legend = [{"id": c, "name": aci_meta["classes"].get(str(c), f"ACI class {c}"),
+                       "group": crophist.GROUPS.get(c, "other")} for c in present]
+            layers.append(put("crop", last, "u1", {"name": f"Crop {aci_meta['years'][-1]}", "unit": "ACI class",
+                                                   "kind": "classes", "native_res_m": 30.0, "grid_res_m": 30.0,
+                                                   "classes": legend, "source": SRC["aci"],
+                                                   "dates": [str(aci_meta["years"][-1])] * 2}, last == 0))
     nw = lonlat(Grid(grid.x0, grid.y_top, res, n), [-0.5], [-0.5])[0]
     se = lonlat(Grid(grid.x0, grid.y_top, res, n), [n - 0.5], [n - 0.5])[0]
     field = {
-        "site": SITE,
+        "site": site,
         "parcel": {"size": n, "res_m": res, "area_ha": round((n * res) ** 2 / 1e4, 1), "nw": nw, "se": se,
                    "crs": grid.crs, "x0": grid.x0, "y_top": grid.y_top},
         "layers": layers,
         "pocket": {"height_max_m": round(float(np.percentile(dtm, POCKET_PCT)), 3),
                    "rule": f"lowest {POCKET_PCT} % of parcel cells by lidar height"},
-        # Canopy outside the park is mostly roofs: no crown is drawn there.
+        # Canopy outside the outline is mostly roofs: no crown is drawn there.
         "trees": terrain.treetops(np.where(park, chm, 0.0)),
         "open": {"area_ha": round(float(open_.sum()) * res * res / 1e4, 1),
                  "rule": f"under {terrain.TREE_MIN_M:.0f} m of canopy, at least {OPEN_FRAC:.0%} such cells in the "
-                         f"{SAT_RES:.0f} m around, summer NDVI of {OPEN_NDVI} or more, on a mapped soil unit, "
-                         f"inside the park, {EDGE_M:.0f} m from the edge of the square (Taupin choices)"},
+                         f"{SAT_RES:.0f} m around, summer NDVI of {min_ndvi} or more, on a mapped soil unit, "
+                         f"inside the {'field' if farm else 'park'} outline, {EDGE_M:.0f} m from the edge of the square (Taupin choices)"},
         **({"park": park_info} if park_info else {}),
+        **({"crops": crops} if crops else {}),
         "traps": traps,
         "trap_rules": {"min_traps": zones.RAP_MIN_TRAPS, "spacing_m": zones.RAP_SPACING_M,
                        "min_spacing_here_m": round(zones.min_spacing_m(traps, res)), "source": SRC["rap"]},
         "sources": {
             "terrain": f"{SRC['hrdem']}; hillshade, slope and wetness index computed from the DTM",
             "trees": f"canopy height = lidar DSM minus DTM; a crown is drawn at each 14 m local maximum above "
-                     f"{terrain.TREE_MIN_M + 1:.0f} m" + (", inside the park outline" if park_info else ""),
+                     f"{terrain.TREE_MIN_M + 1:.0f} m" + (", inside the outline" if park_info else ""),
             "ndvi": f"{SRC['hls']}, {hls_dates[0]} to {hls_dates[1]}",
             "lst": f"{SRC['landsat']}, {ls_dates[0]} to {ls_dates[1]}",
             "soil": f"{SRC['irda']}; {SRC['cansis']}; {PQ41}",
@@ -308,13 +333,20 @@ def main(argv=None) -> None:
     p.add_argument("--irda", type=Path, required=True, help="directory holding IRDA Pedo_*.shp sheets")
     p.add_argument("--cansis", type=Path, required=True, help="directory holding CanSIS soil_*.dbf tables")
     p.add_argument("--out", type=Path, default=ROOT / "web" / "data")
+    p.add_argument("--name", help="site name (with --work holding a grid.json from fetch_layers --lat/--lon)")
     a = p.parse_args(argv)
-    f = bake_layers(a.work, a.out, PARCEL, sorted(a.irda.glob("**/Pedo_*.shp")), [a.cansis])
+    grid, site = PARCEL, SITE
+    gj = a.work / "grid.json"
+    if gj.exists() and json.loads(gj.read_text()).get("lat") is not None:
+        g = json.loads(gj.read_text())
+        grid = Grid(g["x0"], g["y_top"], g["res"], g["size"])
+        site = {"name": a.name or f"{g['lat']:.4f}, {g['lon']:.4f}", "lat": g["lat"], "lon": g["lon"]}
+    a.out.mkdir(parents=True, exist_ok=True)
+    f = bake_layers(a.work, a.out, grid, sorted(a.irda.glob("**/Pedo_*.shp")), [a.cansis], site=site)
     size = sum(x.stat().st_size for x in (a.out / "layers").glob("*.bin"))
     print("layers", len(f["layers"]), "bytes", size, "trees", len(f["trees"]), "traps",
           [(t["id"], t["zone"]) for t in f["traps"]], "min spacing m", f["trap_rules"]["min_spacing_here_m"])
-    for z in f["layers"][-1]["classes"]:
-        print(" zone", z)
+    print("crops", json.dumps({k: v for k, v in f.get("crops", {}).items() if k != "per_year"}))
 
 
 if __name__ == "__main__":

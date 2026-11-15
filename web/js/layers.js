@@ -9,7 +9,11 @@ export const VIEWS = [
   { key: 'lst', layer: 'lst', label: 'Spring surface temperature' },
   { key: 'soil', layer: 'soil', label: 'Soil' },
   { key: 'zones', layer: 'zones', label: 'Scouting zones' },
+  { key: 'crop', layer: 'crop', label: 'Crop last year' },
 ];
+
+// Crop map colours by engine crop group (AAFC ACI classes grouped in src/taupin/crophist.py).
+export const GROUP = { corn: [222, 178, 48], soybean: [120, 160, 60], wheat: [196, 140, 80], buckwheat: [170, 110, 150], forage: [70, 140, 90], other: [150, 150, 140] };
 
 // value = offset + scale * q; q === nodata is NaN. Little-endian, row-major from the north-west.
 export function decode(buf, enc) {
@@ -55,6 +59,7 @@ export function colorOf(layer, v) {
   if (layer.kind === 'classes') {
     const i = layer.classes.findIndex(c => c.id === v);
     if (i < 0) return null;
+    if (layer.key === 'crop') return GROUP[layer.classes[i].group] ?? GROUP.other;
     if (isWater(layer.classes[i])) return WATER;
     // Count only land classes so the palette starts at the first land unit.
     const n = layer.classes.slice(0, i).filter(c => !isWater(c)).length;
@@ -68,6 +73,7 @@ const fmt = (v, d) => Number(v).toFixed(d);
 
 // Legend rows: classes list each class; ramps give three swatches (low, middle, high).
 export function legend(layer) {
+  if (layer.key === 'crop') return layer.classes.map(c => ({ color: colorOf(layer, c.id), label: c.name, detail: `ACI class ${c.id}` }));
   if (layer.kind === 'classes') {
     return layer.classes.map(c => ({
       color: colorOf(layer, c.id),
