@@ -72,3 +72,11 @@ test('trap calendar from the demo forecast has real dates', async () => {
   const p = trapPlan(trapForecast(soil, 2026).trap_12C.rows[0]);
   for (const d of [p.earliest, p.install, p.latest, ...p.counts]) assert.match(d, /^\d{1,2} (Apr|May|Jun|Jul)$/);
 });
+
+test('leap years do not shift the forecast: the same calendar date every year forecasts that date exactly', () => {
+  const per_year = {};
+  for (let y = 2000; y <= 2025; y++) per_year[y] = { trap_12C: `${y}-05-14` };   // seven leap years among them
+  const r = trapForecast({ per_year }, 2026).trap_12C.rows[0];
+  assert.deepEqual(r.doy, [134, 134, 134]);   // with the calendar day of year, leap years would read 135
+  assert.deepEqual([r.date, r.lo, r.hi], ['14 May', '14 May', '14 May']);
+});

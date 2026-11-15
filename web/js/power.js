@@ -49,7 +49,12 @@ export function degreeDayDate(s, year, base = CRW_BASE_C, need = CRW_DD) {
   return null;
 }
 
-export const doy = iso => (Date.parse(iso) - Date.parse(`${iso.slice(0, 4)}-01-01`)) / 864e5 + 1;
+// Day of year on a non-leap calendar, as doy() in src/taupin/soil.py: from 1 March on, a calendar
+// date gets the same number in every year (14 May is day 134 in 2024 as in 2025), so dates of
+// different years can be averaged and labelled with doyLabel. January and February need no change.
+export const doy = iso => (Number(iso.slice(5, 7)) < 3
+  ? (Date.parse(iso) - Date.parse(`${iso.slice(0, 4)}-01-01`)) / 864e5 + 1
+  : 60 + (Date.parse(iso) - Date.parse(`${iso.slice(0, 4)}-03-01`)) / 864e5);
 export function doyLabel(n) {
   const d = new Date(Date.UTC(2001, 0, Math.round(n)));
   return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`;

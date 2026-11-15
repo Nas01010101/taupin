@@ -26,7 +26,7 @@ a threshold or feature set chosen after seeing held-out scores is reported as su
 
 | # | Claim | Track | State | Effort left |
 |---|---|---|---|---|
-| 1 | "forecasts the likely trap window for the next five seasons" | A: trap-date forecast with a backtest | **done** | optional leap-year fix, under an hour |
+| 1 | "forecasts the likely trap window for the next five seasons" | A: trap-date forecast with a backtest | **done**, leap-year fix applied | none |
 | 2 | "flags fields likely to reach the trap threshold, before trapping" | B: early field rank | open | half a day to a day |
 | 3 | "ranks rotations on your priorities, with water columns forecast for each year" | C: rotation ranking | partly done | half a day for the stability count; more for the gaps |
 | 4 | "forecasts this spring's trap date from a seasonal forecast" | D: seasonal forecast input | open | several days, after the hackathon |
@@ -56,10 +56,10 @@ and the 80 % range at each horizon is the 10th to 90th percentile of that model'
 | | Trap date | Rootworm hatch |
 |---|---|---|
 | Model used | mean of all years | mean of all years |
-| Mean backtest miss: mean / last 10 / trend / blend | 6.9 / 7.4 / 8.4 / 7.6 days | 3.8 / 3.9 / 4.2 / 3.9 days |
-| 2026 forecast and 80 % range | 14 May, 6 to 25 May | 26 June, 17 to 28 June |
+| Mean backtest miss: mean / last 10 / trend / blend | 6.9 / 7.4 / 8.4 / 7.6 days | 3.8 / 3.9 / 4.2 / 4.0 days |
+| 2026 forecast and 80 % range | 14 May, 6 to 24 May | 26 June, 17 to 28 June |
 
-The app's 2026 calendar: traps ready by 6 May, set at 12 °C (most likely around 14 May, by 25 May
+The app's 2026 calendar: traps ready by 6 May, set at 12 °C (most likely around 14 May, by 24 May
 in 9 years out of 10), counts on 21 May, 28 May and 4 June, and the count decides the 2027 seed.
 
 **Acceptance check: passed.** The bar was that the 80 % range holds on years it was not built
@@ -73,16 +73,18 @@ already seen (at least 5), then test the next miss.
 Samples are small, and the 1-year-ahead range held every time, so it may be slightly wide.
 Reproduce by running `backtest()` from `forecast.js` on `web/data/soil.json` with the loop above.
 
-**Optional fix: leap years.** `risk.js` `doyOf` uses the day of year, so a date in a leap year
-counts one day later than the same calendar date in other years (14 May 2024 is day 135, 14 May
-2025 is day 134), and `label()` reads days on the 2001 calendar. The effect is under one day on
-average. Fix: count days after 1 March in `doyOf` and `label` (and in `soil.py` and `power.js`
-for the mean, so the bake and the page stay equal), then rerun the tests. A worked version of
-this, with tests, is in the stash `Track A (trap_likely) before syncing with Nas 2026-11-15`
-(`march_day`, `march_label`, `marchDay`, `marchLabel`).
+**Leap-year fix (applied).** The day of year counted a date in a leap year one day later than the
+same calendar date in other years (14 May 2024 was day 135, 14 May 2025 day 134), while the labels
+read days on the 2001 calendar. Dates are now counted on a non-leap calendar from 1 March on:
+`soil.py` `doy` (baked means and trend, through `date_stats`), `power.js` `doy` (live means and
+trend) and `risk.js`, which now uses the same `doy` for the forecast. Effect on the demo field:
+the 2026 range ends on 24 May instead of 25 May; the means read 133.9 and 118.5 instead of 134.2
+and 118.8 (labels still 14 May and 29 April); the trend interval is ± 3.86 instead of ± 3.85; the
+out-of-sample check is unchanged. A test gives the same calendar date every year, leap years
+included, and checks the forecast returns that date with no spread; it fails under the old rule.
 
 **Safe wording.** "Forecasts the likely trap window for the next five seasons from 31 years of
-NASA soil temperature: 2026 most likely 14 May, 6 to 25 May in 8 years out of 10 (range held in 61
+NASA soil temperature: 2026 most likely 14 May, 6 to 24 May in 8 years out of 10 (range held in 61
 of 70 backtest cases)."
 
 **Limits to keep stating.** No seasonal weather forecast is used; the range assumes the coming

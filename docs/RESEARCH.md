@@ -59,7 +59,7 @@ removed 157 of 648; `data/ood_audit.csv`).
   backtest (fit on the years up to t, predict t + 1 to t + 5, first origin after 10 years); the
   lowest mean absolute miss is used, and the 80 % range is the 10th to 90th percentile of its own
   misses at each horizon. Demo field: the mean wins for the trap date (6.9 days against 8.4 for the
-  trend); 2026 forecast 14 May, range 6 to 25 May. Checked out of sample, with each range built
+  trend); 2026 forecast 14 May, range 6 to 24 May. Checked out of sample, with each range built
   only from misses already seen, it held the next date in 61 of 70 cases (87 %).
 - Field ranking: L2 logistic regression on light soil, years in forage, spring root-zone wetness
   and winter minimum soil temperature (`risk/fit.py`). Validation: leave one field out, one year

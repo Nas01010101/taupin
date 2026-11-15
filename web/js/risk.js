@@ -66,8 +66,8 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const fmt = iso => `${Number(iso.slice(8, 10))} ${MON[Number(iso.slice(5, 7)) - 1]}`;   // same style as soil.json means
 
 import { forecast } from './forecast.js';
+import { doy as doyOf } from './power.js';   // non-leap day of year, so leap years do not shift the dates
 
-const doyOf = iso => (Date.parse(iso) - Date.parse(`${iso.slice(0, 4)}-01-01`)) / 864e5 + 1;
 const label = n => { const d = new Date(Date.UTC(2001, 0, Math.round(n))); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
 
 // Trap date and rootworm hatch for five years from startYear, from the per-year dates (forecast.js).

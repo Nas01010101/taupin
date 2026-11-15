@@ -39,10 +39,10 @@ the code the page runs (2026-11-15).
 | Region | Lat, lon | Trap week (soil at 12 °C) | Field rank (year) | Inputs outside the Quebec training range | GPM rain, mm a year, 2001 to 2025 |
 |---|---|---|---|---|---|
 | Montérégie, Quebec | 45.63, -72.96 | 15 May | low (2026) | none | 824 to 1,334 |
-| Chatham-Kent, Ontario | 42.4, -82.18 | 30 Apr | low (2026) | none | 738 to 1,387 |
+| Chatham-Kent, Ontario | 42.4, -82.18 | 29 Apr | low (2026) | none | 738 to 1,387 |
 | Prince Edward Island | 46.35, -63.3 | 29 May | low (2026) | none | 865 to 1,515 |
 | Saskatoon, Saskatchewan | 52.13, -106.67 | 19 May | high (2026) | gwet_spring | 207 to 724 |
-| Story County, Iowa | 42.03, -93.62 | 23 Apr | high (2026) | gwet_spring | 645 to 1,317 |
+| Story County, Iowa | 42.03, -93.62 | 22 Apr | high (2026) | gwet_spring | 645 to 1,317 |
 | Magic Valley, Idaho | 42.56, -114.46 | 8 May | low (2026) | gwet_spring, tsoil_winter_min_c | 148 to 472 |
 
 The field rank was fitted on Quebec fields; where an input falls outside that range the page says so

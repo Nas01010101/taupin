@@ -51,7 +51,10 @@ test('a single warm day does not open the window; seven days at the threshold do
 });
 
 test('day of year, its label and the trend', () => {
-  assert.equal(doy('2025-05-14'), 134); assert.equal(doy('2024-03-01'), 61);
+  assert.equal(doy('2025-05-14'), 134); assert.equal(doy('2024-03-01'), 60);
+  // Non-leap calendar: a date from 1 March on has the same number in leap years; Jan-Feb unchanged.
+  assert.equal(doy('2024-05-14'), 134); assert.equal(doy('2024-12-31'), 365); assert.equal(doy('2024-02-29'), 60);
+  assert.equal(doy('2024-01-31'), 31); assert.equal(doyLabel(doy('2024-05-14')), '14 May');
   assert.equal(doyLabel(134.2), '14 May'); assert.equal(doyLabel(66), '7 Mar');
   const [slope, ci] = linearTrend([1, 2, 3, 4], [2, 4, 6, 8]);
   assert.equal(slope, 2); assert.equal(ci, 0);
