@@ -113,7 +113,8 @@ def component(code: str, names: dict, tops: dict) -> dict:
             top.append(f"{t['TCLAY']} % clay")
         if t.get("ORGCARB", -9) >= 0:
             top.append(f"{t['ORGCARB']} % organic carbon")
-        return {"name": n["SOILNAME"].title(), "texture": ("organic" if n["KIND"] == "O" else "mineral")
+        oc = t.get("ORGCARB", -9)
+        return {"name": n["SOILNAME"].title(), "oc_pct": oc if oc >= 0 else None, "texture": ("organic" if n["KIND"] == "O" else "mineral")
                 + (f", surface layer {t['UDEPTH']}-{t['LDEPTH']} cm: " + ", ".join(top) if top else ""),
                 "drainage": DRAINAGE.get(n["DRAINAGE"], n["DRAINAGE"]), "source": f"{SRC['cansis']}, {code}"}
     return dict(SERIES_NOTES.get(code, {"name": code, "texture": "", "drainage": "", "source": SRC["irda"]}))
@@ -324,7 +325,9 @@ def bake_layers(work: Path, out: Path, grid: Grid, soil_shps: list[Path], cansis
         },
     }
     (out / "field.json").write_text(json.dumps(field, ensure_ascii=False, separators=(",", ":")))
-    return field
+    from . import organic   # imports encode from this module, so it loads here
+    organic.bake(out / "field.json")
+    return json.loads((out / "field.json").read_text())
 
 
 def main(argv=None) -> None:

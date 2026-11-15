@@ -285,6 +285,11 @@ Gallery photos (Wikimedia Commons):
   history is the AAFC Annual Crop Inventory at 30 m: the yearly crop is the majority class over the
   open cells, so a share near 50 % means a split field. The IRDA soil map used covers sheet 31H12
   only, and HRDEM lidar has holes between projects (no coverage at Calumet).
+- Soil organic matter is the surface-layer organic carbon of each CanSIS soil component times
+  1.724 (van Bemmelen), one value per 1950s soil map unit; the true ratio runs to about 2.0, so it
+  is a lower estimate. SoilGrids 2.0 (250 m) is queried live as a second value and for fields
+  outside the baked set; it allows about 5 calls a minute and can time out. A lab test replaces both.
+  The pest engine reads organic matter only through the RAP factor "over 10 %".
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.
 - Not a NASA product. Uses NASA open data.

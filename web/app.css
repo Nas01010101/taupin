@@ -55,6 +55,8 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .status { margin: 0; font-size: var(--t-s); color: var(--muted); }
 .status[data-status="ready"] { color: var(--fg); }
 .status[data-status="missing"], .status[data-status="error"] { color: var(--accent); }
+#lang { font-size: var(--t-s); font-weight: 400; white-space: nowrap; min-height: 36px; }
+#lang b { font-weight: 700; }
 
 /* Layout */
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 500px); gap: var(--s6); padding: 0 var(--s5) var(--s5); }

@@ -17,6 +17,7 @@ import * as memoryui from './memoryui.js';
 import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
 import { nearest, startField, km } from './fields.js';
+import * as organic from './organic.js';
 
 const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
@@ -160,8 +161,36 @@ function renderRank() {
   $('#record').textContent = recordNow();
 }
 
+// SoilGrids for the parcel centre, or the farmer's own point; one request per 100 m position.
+const sgCache = new Map();
+function loadOrganic() {
+  const at = state.own ?? D.field.site, key = `${Number(at.lat).toFixed(3)},${Number(at.lon).toFixed(3)}`;
+  state.sgKey = key;
+  let hit = sgCache.get(key);
+  if (!hit) try { const sg = JSON.parse(localStorage.getItem(`taupin-sg-${key}`)); if (sg) sgCache.set(key, hit = { sg, status: '' }); } catch { /* storage blocked */ }
+  if (hit) { state.sg = hit.sg; state.sgStatus = hit.status; return; }
+  state.sg = null; state.sgStatus = 'Asking SoilGrids for organic carbon…';
+  sgCache.set(key, { sg: null, status: state.sgStatus });
+  organic.fetchSoilgrids(Number(at.lat), Number(at.lon))
+    .then(sg => ({ sg, status: sg ? '' : 'SoilGrids has no value here (water or built-up land).' }))
+    .catch(() => ({ sg: null, status: 'SoilGrids did not answer; the soil survey values stand.' }))
+    .then(r => {
+      sgCache.set(key, r);
+      if (r.sg) try { localStorage.setItem(`taupin-sg-${key}`, JSON.stringify(r.sg)); } catch { /* storage blocked */ }
+      if (state.sgKey === key) renderPanel();
+    });
+}
+
 function renderPanel() {
-  const view = riskView(D.risk, state.zone, state.evidence);
+  loadOrganic();
+  // A measured organic matter value picks the engine's soil case (the RAP factor is OM > 10 %).
+  // The baked survey describes this parcel; a point more than 1 km away gets SoilGrids only.
+  const here = !state.own || (D.fieldId && km(state.own, D.field.site) < 1);
+  const org = here ? D.field.organic : null, units = here ? D.field.layers.find(l => l.key === 'soil')?.classes : [];
+  const om = organic.zoneOM(org, state.zone, state.sg);
+  const view = riskView(D.risk, organic.riskZone(state.zone, om), state.evidence);
+  view.label = organic.zoneLabel(state.zone, om) ?? view.label;
+  $('#organic').innerHTML = organic.organicHTML(org, units, state.sg, { status: state.sgStatus, where: here ? 'the parcel centre' : `your point ${coordText(state.own)}` });
   $('#zone-upland').setAttribute('aria-pressed', state.zone === 'upland');
   $('#zone-pocket').setAttribute('aria-pressed', state.zone === 'pocket');
   $('#risk-summary').innerHTML = ui.riskSummaryHTML(view);

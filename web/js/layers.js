@@ -8,6 +8,7 @@ export const VIEWS = [
   { key: 'ndvi', layer: 'ndvi', label: 'Vegetation' },
   { key: 'lst', layer: 'lst', label: 'Spring surface temperature' },
   { key: 'soil', layer: 'soil', label: 'Soil' },
+  { key: 'om', layer: 'om', label: 'Organic matter' },
   { key: 'zones', layer: 'zones', label: 'Scouting zones' },
   { key: 'crop', layer: 'crop', label: 'Crop last year' },
 ];
@@ -24,12 +25,13 @@ export function decode(buf, enc) {
 }
 
 // Ramps as colour stops over 0..1. Wetness runs dry tan to wet blue, NDVI bare brown to green,
-// temperature cool blue to warm red around the parcel mean (0).
+// temperature cool blue to warm red around the parcel mean (0), organic matter light tan to dark brown.
 const RAMPS = {
   height: [[0, [92, 120, 74]], [0.5, [150, 160, 98]], [1, [196, 178, 132]]],
   twi: [[0, [222, 204, 160]], [0.5, [120, 180, 170]], [1, [36, 84, 160]]],
   ndvi: [[0, [150, 112, 70]], [0.5, [200, 200, 110]], [1, [40, 120, 50]]],
   lst: [[0, [52, 96, 180]], [0.5, [240, 238, 228]], [1, [196, 62, 44]]],
+  om: [[0, [226, 206, 160]], [0.5, [160, 112, 62]], [1, [70, 44, 26]]],
 };
 // Land classes; blue comes last so soil units with four or fewer classes never look like water.
 const CLASS = [[214, 160, 70], [180, 100, 190], [96, 176, 96], [200, 90, 80], [90, 156, 214], [120, 120, 120]];
@@ -48,6 +50,7 @@ export function ramp(name, t) {
 export function span(layer) {
   const [lo, hi] = layer.range;
   if (layer.key === 'lst') { const m = Math.max(Math.abs(lo), Math.abs(hi)); return [-m, m]; }
+  if (layer.key === 'om') return [0, 20];   // fixed, so the middle is the RAP wireworm factor (10 %) on every field
   return [lo, hi];
 }
 
@@ -82,10 +85,12 @@ export function legend(layer) {
         : `Zone ${c.id}: wetness ${c.twi}, NDVI ${c.ndvi}, ${c.lst > 0 ? '+' : ''}${c.lst} °C, soil ${c.soil}`,
       detail: layer.key === 'soil'
         ? c.components.filter(p => p.drainage).map(p => `${p.name}: ${p.drainage}${p.texture ? `; ${p.texture}` : ''}`).join(' | ')
+          + (c.om_pct != null ? ` | organic matter ${c.om_pct} %` : '')
         : `${c.area_ha} ha, traps ${c.traps.join(', ') || 'none'}`,
     }));
   }
   const [lo, hi] = span(layer), d = layer.key === 'ndvi' ? 2 : 1;
+  if (layer.key === 'om') return [[0, '0'], [10, '10 (RAP factor)'], [20, '20 or more']].map(([v, label]) => ({ color: colorOf(layer, v), label }));
   return [lo, (lo + hi) / 2, hi].map(v => ({ color: colorOf(layer, v), label: fmt(v, d) }));
 }
 
