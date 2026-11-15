@@ -189,4 +189,11 @@ export const TEXT = {
   'field form: years in forage before this crop': 'forme du champ: années en fourrage avant cette culture',
   'thirds of the model score over its 82 training fields': 'tiers de la cote du modèle sur ses 82 parcelles d\'entraînement',
   'A share near 50 % means the field was split between two crops that year': 'Une part proche de 50 % signifie que la parcelle était partagée entre deux cultures cette année-là',
+  // Build your own rotation
+  'Pick a crop for each year. Your rotation joins the table and the cards below, scored by the same pest rules and the same soil and water data. It is kept in this browser only. Crops appear here once they have sourced soil and water values.':
+    'Choisissez une culture pour chaque année. Votre rotation s\'ajoute au tableau et aux fiches ci-dessous, évaluée avec les mêmes règles de ravageurs et les mêmes données de sol et d\'eau. Elle est gardée dans ce navigateur seulement. Une culture apparaît ici quand ses valeurs de sol et d\'eau sont sourcées.',
+  'Card text is written from the engine rules for this sequence; no agronomist note on it yet':
+    'Le texte de cette fiche est rédigé à partir des règles du moteur pour cette séquence; aucune note d\'agronome pour l\'instant',
+  'Before 2026 the field is taken as three sod years, the same start as the preset rotations':
+    'Avant 2026, la parcelle est considérée comme en prairie pendant trois ans, le même point de départ que les rotations proposées',
 };

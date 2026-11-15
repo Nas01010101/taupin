@@ -106,6 +106,15 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   matters and the rotations are ranked on those. Each rotation card gives why it is there, the
   evidence, gains and losses against the current rotation, the information gaps and the risks. A
   value with no source shows as ? and is never counted as zero.
+- **Your own rotation.** Under "Build your own rotation" the farmer picks a crop for each year, from
+  the crops that have sourced values in `web/data/crops.json` (a crop added there becomes pickable),
+  and adds up to three rotations, kept in the browser only. They join the table, the cards and the
+  "current rotation" choice. Their pest levels come from `web/js/engine.js`, a line-for-line port of
+  `src/taupin/engine.py` that reads the rule constants from `risk.json`; `web/test/engine.test.mjs`
+  checks it against every preset of `risk.json`, every 5-year sequence of the four crops and 80
+  seeded cases with traces (`python -m taupin.engine_parity` writes the fixture). Their card text is
+  written from the engine rules that applied, each with its source. Like the presets, the field is
+  taken as three sod years before 2026.
 - **Hand over.** Trap points as GPX, CSV and GeoJSON, and a text record with the trap date, the
   counts, the ranking and the photos, for the agronomist. Taupin never decides the prescription.
   The agronomist signs.

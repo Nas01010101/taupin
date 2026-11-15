@@ -183,4 +183,16 @@ export const PATTERNS = [
   [/^(Upland|Low wet pocket): organic matter ([\d.]+) % from the (soil survey|SoilGrids 0-30 cm), (over|under) the RAP factor of (\d+) %$/, (m) =>
     `${m[1] === 'Upland' ? 'Zone haute' : 'Dépression humide'}: matière organique ${m[2].replace('.', ',')} % selon ${m[3] === 'soil survey' ? 'l\'étude pédologique' : 'SoilGrids 0-30 cm'}, ${m[4] === 'over' ? 'au-dessus' : 'sous'} le facteur du RAP de ${m[5]} %`],
   [/^[\d.]+ %(?:, [\d.]+ %)*$/, (m) => m[0].replace(/(\d)\.(\d)/g, '$1,$2')],
+  // Build your own rotation: the farmer's names stay as typed
+  // The default name (custom.js addCustom) is translated; a name the farmer typed is not.
+  [/^((?:\d+\. )?)My rotation (\d+)$/, (m) => `${m[1]}Ma rotation ${m[2]}`],
+  [/^(.+) \(yours\)$/, (m) => `${m[1].replace(/(^|\d\. )My rotation (\d+)$/, '$1Ma rotation $2')} (la vôtre)`],
+  [/^Added "(.+)": it is in the table and the cards below\.?$/, (m) => `« ${m[1]} » ajoutée: elle figure dans le tableau et les fiches ci-dessous`],
+  [/^Remove (.+)$/, (m) => `Retirer ${m[1]}`],
+  [/^Your own rotation \((.+)\), scored by the same rules and data as the others\.?$/, (m, sub) =>
+    `Votre propre rotation (${m[1].split(', ').map(sub).join(', ')}), évaluée avec les mêmes règles et les mêmes données que les autres`],
+  [/^(\d{4}) \((.+?)\): (.+)$/, (m, sub) => `${m[1]} (${sub(m[2])}): ${sub(m[3])}`],
+  [/^Corn after corn in (.+): corn rootworm moderate or high$/, 'Maïs sur maïs en $1: chrysomèle des racines moyenne ou élevée'],
+  [/^Wireworm high in (.+): bait traps before buying seed$/, 'Vers fil-de-fer élevés en $1: pièges-appâts avant d\'acheter la semence'],
+  [/^The rules would support a coated-seed prescription in (.+); the agronomist decides$/, 'Les règles justifieraient une prescription de semences traitées en $1; l\'agronome décide'],
 ];

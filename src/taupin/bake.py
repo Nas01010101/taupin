@@ -54,9 +54,14 @@ def risk_matrix() -> dict:
             scen["trap_threshold"][rk] = [asdict(r) for r in engine.plan_rotation(
                 crops, fld, START_YEAR, traps={START_YEAR: thr})]
         out[zk] = {"label": z["label"], "dominant_genus": fld.dominant_genus, "trap_threshold": thr,
-                   "scenarios": scen}
+                   "field": asdict(fld), "scenarios": scen}
+    # The rule constants travel with the matrix so the page's port of the engine (web/js/engine.js),
+    # used for the farmer's own rotations, reads the same values as this file.
+    rules = {"grass": sorted(engine.GRASS), "prescription_crops": sorted(engine.PRESCRIPTION_CROPS),
+             "trap_threshold": engine.TRAP_THRESHOLD, "levels": engine.LEVELS,
+             "default_prior": list(engine.DEFAULT_PRIOR), "default_years_since_sod": engine.DEFAULT_YEARS_SINCE_SOD}
     return {"start_year": START_YEAR, "rotations": {k: v for k, v in engine.ROTATIONS.items()},
-            "zones": out, "sources": engine.SRC}
+            "zones": out, "rules": rules, "sources": engine.SRC}
 
 
 def bake_soil(tsoil_json: Path, out: Path) -> dict:

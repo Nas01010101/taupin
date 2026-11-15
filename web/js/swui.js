@@ -120,3 +120,23 @@ export function smapHTML(smap, weather) {
 so the POWER wetness input of the field ranking follows the satellite-constrained SMAP analysis. Driest months in SMAP: ${esc(dry)}.
 ${annual ? `GPM IMERG rain at this point averages ${Math.round(annual).toLocaleString('en-US')} mm a year (${full.length} years).` : ''}</p>`;
 }
+
+// "Build your own rotation": one crop per year, a name, and the rotations already built. `draft` is
+// the five crops shown in the pickers; `presets` maps preset ids to their names and sequences.
+export function builderHTML({ startYear, crops, draft, customs, presets, max, status = '' }) {
+  const full = customs.length >= max;
+  const pick = (i) => `<label class="build-year">${startYear + i}<select data-build-year="${i}">${crops.map(c =>
+    `<option value="${esc(c.id)}"${c.id === draft[i] ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>`;
+  const from = Object.entries(presets).map(([id, p]) => `<option value="${esc(id)}">${esc(p.name)}</option>`).join('');
+  // One element per crop name, so the language layer translates each name on its own.
+  const list = customs.map(r => `<li><b>${esc(r.name)}</b>: ${r.crops.map(c => `<span>${esc(crops.find(x => x.id === c)?.name ?? c)}</span>`).join(', ')}
+    <button type="button" class="ghost" data-build-remove="${esc(r.id)}" aria-label="Remove ${esc(r.name)}">Remove</button></li>`).join('');
+  return `<details class="build"${customs.length && !status ? '' : ' open'}><summary>Build your own rotation</summary>
+<p class="small">Pick a crop for each year. Your rotation joins the table and the cards below, scored by the same pest rules and the same soil and water data. It is kept in this browser only. Crops appear here once they have sourced soil and water values.</p>
+<div class="build-row"><label>Start from <select data-build-from><option value="">-</option>${from}</select></label></div>
+<div class="build-row">${Array.from({ length: draft.length }, (_, i) => pick(i)).join('')}</div>
+<div class="build-row"><label>Name <input id="build-name" maxlength="40" placeholder="My rotation"></label>
+<button type="button" data-build-add${full ? ' disabled' : ''}>Add to the comparison</button></div>
+<p class="small" role="status" id="build-status">${esc(status || (full ? `Up to ${max} of your own rotations: remove one to add another.` : ''))}</p>
+${customs.length ? `<ul class="build-list">${list}</ul>` : ''}</details>`;
+}
