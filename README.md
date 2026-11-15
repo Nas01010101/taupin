@@ -120,6 +120,11 @@ gaps.
 
 ## Run it
 
+In the browser: https://nas01010101.github.io/taupin/ (built from `web/` and `model/` by
+`.github/workflows/pages.yml` on each push to `main`).
+
+Locally:
+
 Needs Python 3.9 or newer (standard library only) and a browser. No install step, no network
 after the first load. The `classify` and `bake` extras need Python 3.11 or newer.
 
