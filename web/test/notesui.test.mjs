@@ -6,9 +6,8 @@ import * as mu from '../js/memoryui.js';
 import { createMapNotes } from '../js/mapnotes.js';
 import { resultHTML } from '../js/ui.js';
 import { formatAnswer } from '../js/classify.js';
-import { tableHTML } from '../js/swui.js';
 import { rank, climatology, rotationMetrics } from '../js/soilwater.js';
-import { riskView, ROTATION_NAMES } from '../js/risk.js';
+import { riskView } from '../js/risk.js';
 
 const at = { row: 5, col: 5 };
 const T = new Date('2026-11-15T00:00:00Z');
@@ -130,23 +129,13 @@ test('the field shows a crosshair while a mode is on or a photo waits', () => {
   const p = harness({ photoPending: () => true }); p.mn.render(); assert.equal(p.log.pick.at(-1), true);
 });
 
-test('the rotation table shows each score and what the notes did to it', () => {
+test('field notes move the rotation scores', () => {
   const J = f => JSON.parse(readFileSync(new URL(`../data/${f}.json`, import.meta.url)));
   const risk = J('risk'), crops = J('crops'), view = riskView(risk, 'upland', []);
   const clim = climatology(J('weather'), crops.crops, J('field').site.lat, crops.heavy_rain_mm);
   const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(risk.rotations[r.rotation], clim, crops, r, 'fall_plow')]));
   const list = view.rows.map(r => ({ id: r.rotation, metrics: byId[r.rotation] })), five = ['pests', 'water', 'soil', 'nitrogen', 'organic'];
-  const names = Object.fromEntries(Object.keys(byId).map(id => [id, ROTATION_NAMES[id] ?? id]));
   const w = m.noteEffects([m.makeNote('cover', at, 'upland', {}, { cover: 'low' }), m.makeNote('rill', at, 'upland')]).weights;
-  const impact = Object.fromEntries(m.notesImpact(list, five, w).map(r => [r.id, r]));
-  const html = tableHTML(rank(list, five, w), byId, names, null, impact);
-  assert.match(html, /Score, 0 to 1/);
-  assert.match(html, /from notes/);
-  assert.match(html, /moved from/);
-  assert.ok(!/from notes/.test(tableHTML(rank(list, five), byId, names, null, null)));
-  const text = mu.impactHTML({ fx: m.noteEffects([m.makeNote('cover', at, 'upland', {}, { cover: 'low' })]), chosen: five,
-    impact: m.notesImpact(list, five, { soil: 2 }), names, cover: Object.fromEntries(Object.entries(byId).map(([id, v]) => [id, v.total.c])) });
-  assert.match(text, /The scores moved|The order changed/);
-  assert.match(text, /a rule, not a measurement/);
-  assert.equal(mu.impactHTML({ fx: m.noteEffects([]), chosen: five, impact: [], names, cover: {} }), '');
+  const moved = m.notesImpact(list, five, w);
+  assert.ok(moved.some(r => r.was != null && Math.abs(rank(list, five, w).find(x => x.id === r.id).score - r.was) >= 0.005));
 });

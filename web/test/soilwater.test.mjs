@@ -131,9 +131,9 @@ test('cards: the buckwheat then soybean warning is in the risks of the cards tha
   const ranked = rank(ids.map(id => ({ id, metrics: byId[id] })), ['soil']);
   const html = cardsHTML(ranked, byId, { names: { C_with_buckwheat: 'C', B_corn_soy_wheat: 'B' }, texts: rot.rotations,
     current: 'B_corn_soy_wheat', cropData: crops, sequences, chosen: ['soil'], prior: ['sod'] });
-  const cards = html.split('<article').slice(1);
+  const cards = html.split('<li class="rot').slice(1);
   assert.equal(cards.filter(c => /Soybean right after buckwheat/.test(c)).length, 1);
-  assert.ok(cards.find(c => /<h3>\d\. C</.test(c)).includes('Soybean right after buckwheat'));
+  assert.ok(cards.find(c => /<h3>C</.test(c)).includes('Soybean right after buckwheat'));
 });
 
 test('corn right after corn loses the sourced yield and its residue (Gagnon et al. 2019)', () => {

@@ -60,10 +60,8 @@ Measured limits for each model are in [`PROJECT.md`](PROJECT.md#models).
 
 ## Outputs
 
-- Trap week and ten trap points on the 3D field, exportable as CSV, GPX and GeoJSON.
-- Wireworm count against the threshold for the coated-seed prescription.
-- Seven rotations over five years, ranked by the farmer's priorities, with the evidence behind each rank.
-- A field record: photos, notes and counts per season.
+- Seven rotations over five years, ranked by the farmer's priorities, with the reason behind each rank.
+- The farmer's photos and notes pinned on the 3D field, kept with the field across seasons.
 
 ## Run
 

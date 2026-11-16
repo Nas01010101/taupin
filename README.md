@@ -12,9 +12,8 @@ cover. SoilGrids gives soil organic matter worldwide. Quebec is the example fiel
 square, three baked farm fields and the wireworm risk model's training data are there.
 
 A browser photo model (DINOv2-S, 8 soil-insect classes) pins finds on the 3D field and re-ranks
-the rotations, or sends an unclear photo to the lab. The same page dates the wireworm bait-trap
-week, places ten traps and takes the counts before a farmer buys insecticide-coated seed. It runs
-in the browser, offline; photos and counts never leave the device.
+the rotations, or sends an unclear photo to the lab. It runs in the browser, offline; photos and
+notes never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
@@ -73,82 +72,22 @@ Next: trap counts from Ontario, the Prairies and the US to refit the rank per re
 for US fields, Canadian Space Agency RADARSAT Constellation soil moisture as a direct layer, then any country with trap
 counts.
 
-## Two audiences
-
-One codebase, two versions that share the NASA rules, the photo model and the 3D field:
-
-- **Farmers and agronomists: the web app** (`web/`). The first screen is six steps: your field,
-  trap week, where to trap, enter counts, photo, what to plant. Model numbers sit under "Details"
-  at the bottom of the page.
-- **Researchers: [`docs/RESEARCH.md`](docs/RESEARCH.md)**, a paper outline: question, methods,
-  current results from `risk/model/metrics.json` and `model/metrics.json`, limits, planned
-  benchmarks and candidate venues.
-
 How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.md`](docs/CHALLENGE_FIT.md).
 The system shown in the demo video, scene by scene, with the code for each part: [`docs/SYSTEM.md`](docs/SYSTEM.md).
 
 ## What it does
 
-- **Why.** Since 1 August 2025 in Quebec, insecticide-coated seed (class 3A) needs an agronomist's
-  prescription (Code de gestion des pesticides, D. 470-2025). The evidence for one field is a
-  bait-trap count. In Labrie et al. 2020, 92.6 % of 68 corn fields stayed under 1 wireworm per trap.
-- **When to trap.** Bait traps go in when the top 10 cm of soil holds 12 °C. From NASA POWER
-  `TSOIL1`, 1995 to 2025: 14 May on average, 8 May in 2025. The trap panel gives a calendar per
-  RAP's method: traps ready by the early date (6 May in 1 year out of 10), set at 12 °C, often at
-  seeding, three counts a week apart, and the count decides next season's seed.
-- **Where to trap.** A 600 m square drawn from 1 m lidar relief and canopy, NASA HLS vegetation,
-  Landsat spring surface temperature and the soil map. Ten trap points, about 25 m apart, are
-  spread over four scouting zones of those layers. The zones are not a risk map.
-- **Which fields first.** A model fitted on 82 Quebec bait-trapped fields ranks a field in the low,
-  middle or high third for a year, from two field-form answers and two NASA POWER values. The
-  output is a rank, not a probability.
-- **Your own field.** Enter a latitude and longitude, or use the device's position. The page asks
-  NASA POWER for soil temperature and root-zone wetness at that point and shows the trap date, the
-  date for each year since 1995 and the field's rank. Only the two coordinates leave the device,
-  and the answer is kept for use without a network. It also asks for daily NASA GPM IMERG rain and air
-  temperature, so the water columns of the rotation table are the field's own. The 3D field, the trap
-  points and the pest levels stay those of the field on screen: the demo square, or one of the three
-  baked farm fields, whose pest levels start from their own crop history.
-- **Count.** A sheet for three lifts per trap. Each lift is compared on its own with the threshold
-  of the dominant species (3 per trap for *Hypnoidus abbreviatus*, 1 for *Agriotes*, *Limonius*
-  and *Melanotus*; RAP Grandes cultures, Agri-Réseau doc. 115269).
-- **Identify.** Drop a photo; an 8-class model (DINOv2-S, ONNX, run with onnxruntime-web) names
-  the animal and pins it on the field. Below its abstain threshold it answers "unclear" and shows
-  how to send the photo to the MAPAQ plant diagnostic lab. Taupin sends nothing.
-- **Log finds.** After a photo is named, "Save where I found it" reads the device position, or the
-  photo's GPS if you choose that, only on that tap. Finds stay in the browser, show as pins on the
-  field when they fall in the demo square, go into the agronomist record and export as CSV and
-  GeoJSON. The latest find fills in the coordinates for "Your field". "Delete all finds" clears them.
-- **Plan.** Seven rotations for 2026 to 2030: corn every year, corn and soybean (marked as current;
-  the farmer can mark another), corn-soybean-wheat, corn-buckwheat-soybean-wheat, buckwheat first
-  (corn in year 3, for a field coming out of hay), soybean-wheat with no corn, and two corn years
-  then soybean and wheat. Each gets the
-  dry-year water shortfall (GPM IMERG rain against FAO-56 crop water need), heavy-rain days on bare
-  soil, the USLE cover factor for the chosen tillage (OMAFRA 23-005), nitrogen to buy (CRAAQ, MAPAQ),
-  crop residue returned (Lal 2005) and wireworm and corn rootworm levels. The farmer ticks what
-  matters and the rotations are ranked on those. Each rotation card gives why it is there, the
-  evidence, gains and losses against the current rotation, the information gaps and the risks. A
-  value with no source shows as ? and is never counted as zero.
-- **Your own rotation.** Under "Build your own rotation" the farmer picks a crop for each year, from
-  the crops that have sourced values in `web/data/crops.json` (a crop added there becomes pickable),
-  and adds up to three rotations, kept in the browser only. They join the table, the cards and the
-  "current rotation" choice. Their pest levels come from `web/js/engine.js`, a line-for-line port of
-  `src/taupin/engine.py` that reads the rule constants from `risk.json`; `web/test/engine.test.mjs`
-  checks it against every preset of `risk.json`, every 5-year sequence of the four crops and 80
-  seeded cases with traces (`python -m taupin.engine_parity` writes the fixture). Their card text is
-  written from the engine rules that applied, each with its source. They start from the same crop
-  history as the presets: the field's own on a baked farm field, three sod years on the park.
-- **Your crop history.** Under the crop strip, "Check your crop history" shows 2021 to 2025, pre-filled
-  from the satellite crop map on a baked farm field (with its share of the open cells) and empty
-  elsewhere, plus the last hay or pasture year if it is earlier. A year the farmer changes, or a last
-  hay year, becomes the engine's start: every rotation, presets included, is then scored in the
-  browser from those years (`web/js/history.js`, `web/js/engine.js`). On Laval, 2025 soybean instead
-  of corn takes 2026 corn rootworm from HIGH to LOW. The agronomist record lists each year with its
-  source (satellite map, confirmed, or entered by the farmer). Kept in the browser only, per field.
-  `web/test/history.test.mjs` also checks that each farm's baked table equals the browser engine.
-- **Hand over.** Trap points as GPX, CSV and GeoJSON, and a text record with the trap date, the
-  counts, the ranking and the photos, for the agronomist. Taupin never decides the prescription.
-  The agronomist signs.
+- **Your field in 3D.** Pick any point on a map. The page builds a 600 m square from elevation data
+  (1 m lidar in Canada, global terrain tiles elsewhere) with plant cover, surface temperature, soil
+  and organic matter layers.
+- **Is this an active crop field?** Half or more of the square under canopy of 3 m or more means no.
+- **Rotations ranked.** Seven five-year rotations scored on NASA GPM IMERG rain, SMAP and POWER soil
+  data: dry-year water shortfall, soil loss (USLE cover), nitrogen to buy, residue returned and soil
+  pest levels. The farmer ticks what matters and marks the current rotation; the cards re-rank.
+- **Photos and notes.** A photo of a soil insect, standing water, ground cover or a water channel is
+  pinned on the field. An 8-class model (DINOv2-S, ONNX, run in the browser) names soil insects and
+  answers "unclear" below its threshold. Notes and photos stay on the device and move the ranking.
+- The farmer and the agronomist decide.
 
 ## Prior work
 
@@ -337,20 +276,6 @@ Gallery photos (Wikimedia Commons):
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.
 - Not a NASA product. Uses NASA open data.
-
-## Citing
-
-```bibtex
-@software{taupin2026,
-  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for any field},
-  author = {{Taupin contributors}},
-  year  = {2026},
-  url   = {https://github.com/Nas01010101/taupin},
-  note  = {NASA Space Apps Challenge 2026}
-}
-```
-
-Cite the data sources above as well, in particular NASA POWER, NASA HLS and Labrie et al. 2020.
 
 ## Field outing
 

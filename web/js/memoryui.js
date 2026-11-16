@@ -1,7 +1,7 @@
 // HTML for the photo log, the field memory list and "what your notes changed". Pure functions of
 // their arguments; every file-, model- or user-derived string goes through esc().
 import { esc } from './ui.js';
-import { COVER_LEVELS, KIND_LABELS, NOTE_KINDS, effectText, ruleLines } from './memory.js';
+import { COVER_LEVELS, KIND_LABELS, NOTE_KINDS, effectText } from './memory.js';
 
 const pressed = on => ` aria-pressed="${on ? 'true' : 'false'}"`;
 
@@ -46,32 +46,6 @@ export function memoryHTML({ items, notes, finds }) {
     + '<button type="button" class="ghost" data-del="all">Delete everything</button></div>';
 }
 
-// Above the rotation table: which rule each kind of note applies and what it did to the order.
-// impact = notesImpact() rows; names = rotation id -> name; cover = rotation id -> USLE factor.
-export function impactHTML({ fx, chosen, impact, names, cover }) {
-  const rules = ruleLines(fx);
-  if (!rules.length) return '';
-  const weighted = !!fx.weights.soil, on = weighted && chosen.includes('soil');
-  const order = rows => rows.map(r => esc(names[r.id])).join(', ');
-  let result;
-  if (!weighted) result = 'These notes do not change the scores or the order.';
-  else if (!on) result = 'Less soil loss is not ticked, so the notes change no score. Tick it to apply them.';
-  else {
-    const before = [...impact].sort((a, b) => a.wasRank - b.wasRank), moved = impact.some(r => r.rank !== r.wasRank);
-    const f = r => `${esc(names[r.id])} ${r.score - r.was >= 0 ? '+' : '-'}${Math.abs(r.score - r.was).toFixed(2)}`;
-    result = moved
-      ? `The order changed. Without the notes: ${order(before)}. With them: ${order(impact)}.`
-      : `The order is the same: ${order(impact)}. The scores moved: ${impact.map(f).join(', ')}.`;
-  }
-  const factors = on ? `<p class="small">The soil-loss priority reads the USLE cover factor, lower is more cover: ${
-    impact.filter(r => cover[r.id] != null).sort((a, b) => cover[a.id] - cover[b.id]).map(r => `${esc(names[r.id])} ${cover[r.id].toFixed(2)}`).join(', ')}.</p>` : '';
-  return `<div class="notes-fx"><h3>What your notes changed</h3><ul class="small">${rules.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
-    + `<p class="small"><strong>${result}</strong></p>${factors}`
-    + '<p class="small muted">The weights are a rule, not a measurement: each of low cover and a water channel adds one to the soil-loss priority, once however many notes. Each ticked priority scores 0 for the worst rotation shown to 1 for the best, and the score is the weighted mean.</p></div>';
-}
-
-// "Add a note on the map": a switch, then the kind (and cover level) to drop where the farmer clicks.
-// map = { mode: null | 'add' | 'move', kind, cover }.
 export function mapBarHTML(map) {
   const on = map.mode === 'add';
   const kinds = Object.entries(NOTE_KINDS).map(([k, v]) =>

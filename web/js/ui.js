@@ -11,7 +11,7 @@ const pct = p => `${(100 * p).toFixed(1)} %`;
 const LEVEL = { LOW: 'low', MODERATE: 'mod', HIGH: 'high' };
 
 export function resultHTML(st) {
-  if (st.kind === 'idle') return `<p class="muted">No photo yet. Drop one here, choose a file, or pick one from the gallery.</p>`;
+  if (st.kind === 'idle') return `<p class="muted">No photo yet. Drop one here or choose a file.</p>`;
   if (st.kind === 'loading') return `<p class="muted" aria-busy="true">Classifying ${esc(st.name)}…</p>`;
   if (st.kind === 'missing') return `<p><strong>Model not installed.</strong> The field, trap window and risk table still work. ` +
     `To add it, put <code>taupin.onnx</code> and <code>labels.json</code> in <code>model/</code> and start with <code>python -m taupin</code>.</p>`;

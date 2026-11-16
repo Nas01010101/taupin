@@ -69,6 +69,14 @@ export const PATTERNS = [
   [/^(Soybean|Canola) right after buckwheat: (.+) \[(.+)\]$/, (m, sub) =>
     `${sub(m[1])} juste après le sarrasin: ${sub(m[2])} [${m[3]}]`],
 
+  [/^(Soybean|Canola) right after buckwheat: (.+)$/, (m, sub) =>
+    `${sub(m[1])} juste après le sarrasin: ${sub(m[2])}`],
+  [/^(.+)\. NASA rain and soil data fetched (\S+)\.$/, (m, sub) => `${sub(m[1]) ?? m[1]}. Données de pluie et de sol NASA obtenues le ${m[2]}.`],
+  [/^(.+)\. NASA data for the demo field\.$/, (m, sub) => `${sub(m[1]) ?? m[1]}. Données NASA du champ de démonstration.`],
+  [/^(.+)\. NASA POWER sent no rain here, so the demo field's rain is used\.$/, (m, sub) => `${sub(m[1]) ?? m[1]}. NASA POWER n'a pas envoyé de pluie ici : la pluie du champ de démonstration est utilisée.`],
+  [/^NASA rain and soil data fetched (\S+)\.$/, 'Données de pluie et de sol NASA obtenues le $1.'],
+  [/^Picked (.+)\.$/, 'Point choisi : $1.'],
+
   // Rotation comparison sentences
   [new RegExp(`^${NUM} mm (less|more) water short per year in a dry year$`), (m) =>
     `Déficit en eau ${m[2] === 'less' ? 'inférieur' : 'supérieur'} de ${m[1]} mm par année sèche`],

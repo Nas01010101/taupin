@@ -1,25 +1,21 @@
-// Wires the page: loads the baked data, builds the 3D field, loads the model if installed,
-// classifies dropped photos in the browser and redraws the risk panel from the evidence.
+// Wires the page: loads the baked data, builds the 3D field, ranks the rotations from the NASA
+// inputs, and classifies dropped photos in the browser so they can update the ranking.
 import * as ort from '../vendor/ort/ort.wasm.min.mjs';
 import { createScene } from './scene.js';
 import { VIEWS } from './layers.js';
 import { loadModel, classifyPixels } from './model.js';
-import { effectFor, riskView, trapWindow, trapPlan, ROTATION_NAMES } from './risk.js';
+import { effectFor, riskView, ROTATION_NAMES } from './risk.js';
 import { climatology, projectClimate, rotationMetrics, rank } from './soilwater.js';
-import * as custom from './custom.js';
-import * as hist from './history.js';
-import { makeRules, scenariosFor } from './engine.js';
 import * as sw from './swui.js';
-import { fieldRanking, soilLightCheck, soilLightNote } from './fieldrisk.js';
-import { parseCoords, coordText, fetchField } from './power.js';
-import { formatAnswer, preprocess } from './classify.js';
+import { coordText, fetchField } from './power.js';
+import { preprocess } from './classify.js';
 import * as scout from './scout.js';
 import * as finds from './finds.js';
 import * as memory from './memory.js';
 import * as memoryui from './memoryui.js';
 import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
-import { nearest, startField, km } from './fields.js';
+import { startField, km } from './fields.js';
 import { buildField, packField, unpackField } from './build.js';
 import { soilAt } from './soil.js';
 import { riskMatrix } from './fieldengine.js';
@@ -31,17 +27,9 @@ const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
 const PIN = { wireworm: 0xe3a93f, rootworm: 0xb3361f, beneficial: 0x4f9a5a, none: 0x8a8f8c, unscored: 0x8a8f8c, unclear: 0xf2f2f2 };
 
-const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, custom: [], draft: [], hist: { entries: {}, lastHay: null }, zone: 'upland', sel: null, rankYear: null, forage: 0, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
+const state = { sw: { chosen: ['pests', 'water', 'soil', 'nitrogen', 'organic'], current: null, tillage: 'fall_plow' }, zone: 'upland', sel: null, evidence: [], current: { kind: 'idle' }, model: { status: 'loading' } };
 let D, scene, mn;
 
-// The count sheet lives in this browser only (localStorage); nothing is sent anywhere.
-const SHEET_KEY = 'taupin-counts';
-function loadSheet() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(SHEET_KEY)) ?? {}; } catch { /* private window or bad JSON: start empty */ }
-  return { counts: saved.counts ?? {}, dates: saved.dates ?? [], genus: saved.genus in scout.THRESHOLDS ? saved.genus : null };
-}
-const sheet = loadSheet();
 const DEMO_RUN = new URLSearchParams(location.search).has('demo');   // the recorded demo always uses the baked field
 const store = (() => { try { return localStorage; } catch { return null; } })();   // null when site data is blocked
 state.cur = null; state.log = null;   // the photo being logged, and what the farmer picked for it
@@ -49,95 +37,35 @@ state.finds = DEMO_RUN ? [] : finds.loadFinds(store);   // saved finds stay on t
 state.notes = DEMO_RUN ? [] : memory.loadNotes(store);   // field notes stay on this device too
 const today = () => new Date().toLocaleDateString('en-CA');   // YYYY-MM-DD in local time
 
-// The demo square has no light soil; for another field the farmer ticks the box.
-const rankNow = () => fieldRanking(D.model, D.fieldRisk, { year: state.rankYear, forageYears: state.forage, lightSoil: state.lightAsk && state.light ? 1 : 0 });
-
-function recordNow() {
-  const r = rankNow();
-  return scout.recordText({ date: today(), field: D.field, window: trapWindow(D.soil, D.risk.start_year), sheet, own: state.own && coordText(state.own),
-    rank: r && { text: ui.RANK_TEXT[r.rank], year: r.year, n: D.model.metrics.n },
-    photos: state.evidence.map(e => `${formatAnswer(e.decision)}, ${e.zoneLabel}`), finds: state.finds, history: historyRecord() });
-}
-
-// The crop history behind the pest levels, for the agronomist record; null when it is the baked one.
-function historyRecord() {
-  const start = histStart();
-  if (!start) return null;
-  const shares = Object.fromEntries(Object.entries(D.field.crops?.per_year ?? {}).map(([y, c]) => [y, c.share]));
-  return hist.historyLines(hist.rows(D.risk.start_year, satNow(), state.hist.entries, shares), state.hist.lastHay, start.sodKnown);
-}
-
-function renderCounts() {
-  $('#count-result').innerHTML = ui.countResultHTML(scout.liftSummary(D.field.traps, sheet), D.field.trap_rules.min_traps);
-  $('#record').textContent = recordNow();
-}
-
 function saveFile(name, text, type) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-const FILES = {
-  gpx: () => ['taupin-traps.gpx', scout.trapsGPX(D.field), 'application/gpx+xml'],
-  csv: () => ['taupin-traps.csv', scout.trapsCSV(D.field, sheet), 'text/csv'],
-  geojson: () => ['taupin-traps.geojson', scout.trapsGeoJSON(D.field, sheet), 'application/geo+json'],
-  record: () => [`taupin-record-${today()}.txt`, recordNow(), 'text/plain'],
-};
 
 function zoneOf(cell) { return cell && scene.isPocket(cell.row, cell.col) ? 'pocket' : 'upland'; }
 
 function renderModelStatus() {
   const m = state.model, el = $('#model-status');
-  const text = { loading: 'Loading the photo check…', ready: 'Photo check ready', missing: 'Photo check not installed', error: 'Photo check failed to load' }[m.status];
-  el.textContent = text; el.dataset.status = m.status;
+  el.textContent = { loading: 'Loading the photo check…', ready: 'Photo check ready', missing: 'Photo check not installed', error: 'Photo check failed to load' }[m.status];
+  el.dataset.status = m.status;
   if (m.reason) el.title = m.reason;
-  $('#model-metrics').innerHTML = m.status !== 'ready' ? ''
-    : D?.metrics ? ui.metricsHTML(D.metrics) : 'No model/metrics.json next to the model, so no accuracy is shown.';
 }
 
-// The soil map units under this parcel (Dorval clay loam and muck) are neither sand
-// nor sandy loam, so the model's light-soil input is 0 everywhere here.
-const OWN_SOIL_NOTE = 'The app has no soil map for this place: tick the box if the field is sand or sandy loam.';
-// A built field in the United States brings its surface soil from USDA SSURGO (soil.js).
-const soilNote = () => {
-  const s = D.fieldId === MINE ? loadBuilt()?.soilAt : null;
-  return s ? `Soil under the tapped point (USDA SSURGO): ${s.texture.toLowerCase()} (${s.name}), organic matter ${s.om ?? '?'} %, sand ${s.sand ?? '?'} %, clay ${s.clay ?? '?'} %. The box is preset from it; change it if your field differs.` : OWN_SOIL_NOTE;
-};
 const OWN_KEY = 'taupin-own', FIELD_KEY = 'taupin-field';   // FIELD_KEY: the last field picked here
 // BUILT_KEY: the field the farmer built by tapping the map (build.js), kept on this device.
 const BUILT_KEY = 'taupin-built', MINE = 'mine';
 function loadBuilt() { try { const r = JSON.parse(localStorage.getItem(BUILT_KEY)); return r?.field ? r : null; } catch { return null; } }
 
-// A baked field near the typed position: say so, with a link that opens it.
-function nearHint(site) {
-  const n = site && nearest(D.fields, site);
-  if (!n || n.field.id === D.fieldId) return '';
-  return ` A baked 3D field, ${n.field.name}, is ${n.km.toFixed(1)} km away: open it with the Quebec fields buttons above.`;
-}
-
-// Swap the baked dates and ranking inputs for another field's (or back, with null) and redraw.
+// Swap the NASA inputs for another position's (or back to the demo's, with null) and redraw.
 function useField(own, note = '') {
   state.own = own && own.site;
   D.soil = own ? own.soil : D.demo.soil; D.fieldRisk = own ? own.fr : D.demo.fieldRisk;
   D.weather = own?.weather ?? D.demo.weather;
-  const years = Object.keys(D.fieldRisk.per_year).sort();
-  state.rankYear = years[years.length - 1];
-  $('#rank-year').innerHTML = years.map(y => `<option${y === state.rankYear ? ' selected' : ''}>${ui.esc(y)}</option>`).join('');
-  // The field's soil map answers "sand or sandy loam" when the dates are for the field on screen;
-  // typed coordinates elsewhere have no soil map here, and an unsure map asks the farmer too.
-  state.lightMap = !own || km(own.site, D.field.site) < 1 ? soilLightCheck(D.field) : null;
-  state.lightAsk = !state.lightMap || state.lightMap.light == null;
-  $('#rank-light-wrap').hidden = !state.lightAsk;
-  $('#own-reset').hidden = !own || !!D.fieldId;   // a baked field leaves by the field buttons
-  $('#own-status').textContent = note || (own
-    ? `Showing ${coordText(own.site)}, fetched ${own.fetched}. NASA POWER is modelled on a grid of about 50 km, so neighbouring fields get the same values. `
-      + (own.soil.always_warm ? 'The soil here is already at 12 °C on 1 March, so the date rule, written for Quebec springs, says nothing useful. ' : '')
-      + (own.weather ? 'The rotation water columns use this field\'s GPM IMERG rain. ' : 'NASA POWER sent no IMERG rain, so the rotation water columns are the demo field\'s. ')
-      + (D.fieldId ? `The 3D field and trap points are ${D.field.site.name}, ${D.field.site.built ? 'built on this device from lidar and crop maps' : 'baked from lidar, satellite and crop maps'}.` : 'The 3D field, the trap points and the pest levels are still the demo square.')
-      + nearHint(own.site)
-    : `Showing ${D.fieldId ? '' : 'the demo field, '}${D.field.site.name}.`);
-  renderPanel(); renderRank();
+  $('#field-status').textContent = note || `${D.field.site.name}, ${coordText(D.field.site)}. `
+    + (own ? (own.weather ? `NASA rain and soil data fetched ${own.fetched}.` : 'NASA POWER sent no rain here, so the demo field\'s rain is used.') : 'NASA data for the demo field.');
+  renderPanel();
 }
 
 // Water climatology per weather series; recomputed only when the field changes.
@@ -153,72 +81,29 @@ function climNow() {
   return climCache.get(D.weather);
 }
 
-// The farmer's own rotations (web/js/custom.js), scored by the browser port of the engine; one
-// computation per zone and sequence.
-let rules = null;
-const scenCache = new Map();
-// The farmer's crop history (web/js/history.js), when it changes the engine's start: then every
-// rotation, presets included, is scored in the browser from that start instead of the baked one.
-const histField = () => D.fieldId ?? (state.own ? 'own' : 'demo');
-const satNow = () => hist.satelliteYears(D.risk.history);
-function histStart() {
-  const sat = satNow(), h = state.hist;
-  return hist.changesStart(sat, h.entries, h.lastHay) ? hist.engineStart(D.risk.start_year, sat, h.entries, h.lastHay) : null;
-}
-function extraNow(zone) {
-  const start = histStart(), tag = start ? JSON.stringify(start) : '';
-  const score = (crops) => {
-    const k = `${zone}|${crops.join()}|${tag}`;
-    if (!scenCache.has(k)) scenCache.set(k, scenariosFor(D.risk, rules, zone, crops, start));
-    return scenCache.get(k);
-  };
-  const presets = start ? Object.entries(D.risk.rotations).map(([id, crops]) => [id, { name: ROTATION_NAMES[id] ?? id, custom: false, scenarios: score(crops) }]) : [];
-  return Object.fromEntries([...presets, ...state.custom.map(r => [r.id, { name: r.name, custom: true, scenarios: score(r.crops) }])]);
-}
-function renderHistory(status = '') {
-  const shares = Object.fromEntries(Object.entries(D.field.crops?.per_year ?? {}).map(([y, c]) => [y, c.share]));
-  const rowList = hist.rows(D.risk.start_year, satNow(), state.hist.entries, shares);
-  $('#hist-edit').innerHTML = ui.historyEditHTML({ rows: rowList, lastHay: state.hist.lastHay, hasSat: Object.keys(satNow()).length > 0,
-    active: !!histStart(), status, startYear: D.risk.start_year });
-}
-const seqOf = id => D.risk.rotations[id] ?? state.custom.find(r => r.id === id)?.crops;
-const allNames = () => ({ ...Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id])),
-  ...Object.fromEntries(state.custom.map(r => [r.id, `${r.name} (yours)`])) });
+const seqOf = id => D.risk.rotations[id];
+const allNames = () => Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, ROTATION_NAMES[id] ?? id]));
 function renderControls() { $('#sw-controls').innerHTML = sw.controlsHTML({ names: allNames(), ...state.sw }); }
-function renderBuilder(status = '') {
-  $('#sw-build').innerHTML = sw.builderHTML({ startYear: D.risk.start_year, crops: custom.pickable(D.crops), draft: state.draft, customs: state.custom,
-    presets: Object.fromEntries(Object.keys(D.risk.rotations).map(id => [id, { name: ROTATION_NAMES[id] ?? id }])), max: custom.MAX_CUSTOM, status });
-}
 
+// Rank the rotations on the ticked priorities; field notes reweight soil loss (memory.js).
 function renderSoilWater(view) {
   const clim = climNow(), o = state.sw, ids = view.rows.map(r => r.rotation);
-  const prior = histStart()?.prior ?? D.risk.history?.prior ?? D.risk.rules?.default_prior ?? [];
+  const prior = D.risk.history?.prior ?? D.risk.rules?.default_prior ?? [];
   const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(seqOf(r.rotation), clim ?? { crops: {} }, D.crops, r, o.tillage, prior)]));
-  const rots = ids.map(id => ({ id, metrics: byId[id] })), fx = memory.noteEffects(state.notes);
-  const ranked = rank(rots, o.chosen, fx.weights);
-  const names = Object.fromEntries(view.rows.map(r => [r.rotation, r.custom ? `${r.name} (yours)` : r.name]));
-  const texts = { ...D.rotations.rotations, ...Object.fromEntries(view.rows.filter(r => r.custom)
-    .map(r => [r.rotation, custom.customText(state.custom.find(c => c.id === r.rotation), r, D.crops)])) };
+  const ranked = rank(ids.map(id => ({ id, metrics: byId[id] })), o.chosen, memory.noteEffects(state.notes).weights);
+  const names = Object.fromEntries(view.rows.map(r => [r.rotation, r.name]));
   const sequences = Object.fromEntries(ids.map(id => [id, seqOf(id)]));
-  // What the notes did: score and rank of each rotation with and without the note weights.
-  const impact = fx.weights.soil ? memory.notesImpact(rots, o.chosen, fx.weights) : [];
-  $('#sw-notes').innerHTML = memoryui.impactHTML({ fx, chosen: o.chosen, impact, names, cover: Object.fromEntries(ids.map(id => [id, byId[id].total.c])) });
-  $('#sw-table').innerHTML = sw.tableHTML(ranked, byId, names, o.current, impact.length && o.chosen.includes('soil') ? Object.fromEntries(impact.map(r => [r.id, r])) : null);
-  // The crop before 2026 (farmer's history, else the baked record, else the default start) counts for the rotation conflicts.
-  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen, prior });
-  $('#sw-how').innerHTML = sw.climateHTML(clim, D.crops, D.weather, state.own ? coordText(state.own) : D.field.site.name);
+  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, current: o.current, cropData: D.crops, sequences, prior });
 }
 
 async function loadOwn(site) {
-  if (!site) { $('#own-status').textContent = 'Enter a latitude from -90 to 90 and a longitude from -180 to 180, as decimal degrees (west is negative).'; return; }
-  $('#own-lat').value = site.lat; $('#own-lon').value = site.lon;
-  $('#own-status').textContent = 'Asking NASA POWER…';
+  $('#field-status').textContent = 'Asking NASA POWER for rain and soil data…';
   try {
     const own = { ...await fetchField(site, D.demo), fetched: today() };
     try { localStorage.setItem(OWN_KEY, JSON.stringify(own)); } catch { /* storage blocked: the field lasts for this visit */ }
     useField(own);
   } catch (e) {
-    $('#own-status').textContent = `No dates for ${coordText(site)}: ${e instanceof TypeError ? 'NASA POWER could not be reached' : e.message}. The page still shows ${state.own ? coordText(state.own) : D.fieldId ? `${D.field.site.name} with the demo park's NASA dates` : 'the demo field'}.`;
+    $('#field-status').textContent = `NASA POWER did not answer for ${coordText(site)} (${e instanceof TypeError ? 'no network' : e.message}). The demo field's NASA data is used.`;
   }
 }
 
@@ -226,15 +111,16 @@ async function loadOwn(site) {
 let pickSite = null;
 async function openFieldMap() {
   const c = state.own ?? D.field.site;
+  $('#pick').hidden = false;
   $('#pick-status').textContent = 'Loading the map…';
   try {
     await openPicker($('#pick'), { center: { lat: c.lat, lon: c.lon, zoom: 15 }, onPick: s => {
       pickSite = s; $('#pick-build').disabled = false;
-      $('#pick-status').textContent = `Picked ${coordText(s)}. Build the 3D field here: about 2 MB to download once, then it stays on this device.`;
+      $('#pick-status').textContent = `Picked ${coordText(s)}.`;
     } });
     $('#pick-open').hidden = true;
     if (!pickSite) $('#pick-status').textContent = 'Tap inside your field.';
-  } catch (e) { $('#pick-status').textContent = `The map could not load (${e.message}). Type the coordinates below instead.`; }
+  } catch (e) { $('#pick-status').textContent = `The map could not load (${e.message}).`; }
 }
 
 async function buildHere() {
@@ -249,20 +135,13 @@ async function buildHere() {
       st.textContent = 'This browser blocks site storage, so the field cannot be kept. Allow site data for this page and build again.';
       btn.disabled = false; return;
     }
-    st.textContent = `Built: ${b.field.open.area_ha} ha to scout, ${b.field.traps.length} traps. Opening your field…`;
+    st.textContent = 'Built. Opening your field…';
     const q = new URLSearchParams(location.search); q.set('field', MINE); location.search = q.toString();
   } catch (e) {
     console.error(e);
     st.textContent = `Could not build a field here: ${/fetch|network/i.test(e.message) ? 'a data service could not be reached; try again with a network' : e.message}.`;
     btn.disabled = false;
   }
-}
-
-function renderRank() {
-  const r = rankNow();
-  $('#h-rank').textContent = r ? `Which fields to trap first: ${ui.RANK_TEXT[r.rank].toLowerCase()} third for ${r.year}` : 'Which fields to trap first';
-  $('#rank').innerHTML = ui.fieldRankHTML(r, D.model, { lightSoilNote: state.lightMap ? soilLightNote(state.lightMap) : soilNote() });
-  $('#record').textContent = recordNow();
 }
 
 // SoilGrids for the parcel centre, or the farmer's own point; one request per 100 m position.
@@ -290,28 +169,10 @@ function renderPanel() {
   // A measured organic matter value picks the engine's soil case (the RAP factor is OM > 10 %).
   // The baked survey describes this parcel; a point more than 1 km away gets SoilGrids only.
   const here = !state.own || (D.fieldId && km(state.own, D.field.site) < 1);
-  const org = here ? D.field.organic : null, units = here ? D.field.layers.find(l => l.key === 'soil')?.classes : [];
-  const om = organic.zoneOM(org, state.zone, state.sg);
-  // The farmer's own rotations are scored in the same engine zone as the presets.
-  const rz = organic.riskZone(state.zone, om);
-  const view = riskView(D.risk, rz, state.evidence, extraNow(rz));
-  view.label = organic.zoneLabel(state.zone, om) ?? view.label;
-  if (histStart()) view.label += '; earlier crops as checked by the farmer';
-  $('#organic').innerHTML = organic.organicHTML(org, units, state.sg, { status: state.sgStatus, where: here ? 'the parcel centre' : `your point ${coordText(state.own)}` });
-  $('#zone-upland').setAttribute('aria-pressed', state.zone === 'upland');
-  $('#zone-pocket').setAttribute('aria-pressed', state.zone === 'pocket');
-  $('#risk-summary').innerHTML = ui.riskSummaryHTML(view);
-  $('#risk-table').innerHTML = ui.riskTableHTML(view, state.sel);
-  $('#trace').innerHTML = ui.traceHTML(view, state.sel);
+  const om = organic.zoneOM(here ? D.field.organic : null, state.zone, state.sg);
+  const view = riskView(D.risk, organic.riskZone(state.zone, om), state.evidence);
   renderSoilWater(view);
-  const tw = trapWindow(D.soil, D.risk.start_year), next = tw.fc.trap_12C?.rows[0];
-  $('#h-trap').textContent = next ? `2. Trap week ${next.year}: set bait traps around ${next.date}` : `2. Trap week: set bait traps around ${tw.mean12}`;
-  $('#trap-lede').textContent = `The week the top 10 cm of soil reaches 12 °C${next ? `, likely between ${next.lo} and ${next.hi}` : ''}. Forecast from NASA POWER, ${tw.span[0]}-${tw.span[1]}${state.own ? ` at ${coordText(state.own)}` : ''}.`;
-  tw.plan = trapPlan(next);
-  $('#trap').innerHTML = ui.trapHTML(tw, D.soil, state.evidence);
-  $('#evidence').innerHTML = ui.evidenceHTML(state.evidence);
   $('#result').innerHTML = ui.resultHTML(state.current);
-  $('#record').textContent = recordNow();
   document.body.classList.toggle('has-ww', view.ww);
   renderMemory();
 }
@@ -414,8 +275,6 @@ function renderMemory() {
   $('#log').innerHTML = e && state.log && photoPending() && !DEMO_RUN ? memoryui.logHTML({ log: state.log, position }) : '';
   $('#memory').innerHTML = memoryui.memoryHTML({ items: itemsNow(), notes: state.notes.length, finds: state.finds.length });
   mn.render();
-  scene.setMarks(memory.noteMarks(state.notes, D.field.parcel.res_m));
-  $('#record').textContent = recordNow();
 }
 
 // The photo is logged: it leaves the log panel and its pin is rebuilt from what was saved.
@@ -477,11 +336,9 @@ function saveFind(pos) {
   if (!f) { findStatus('No position to save.'); return; }
   state.finds.push(f);
   const kept = finds.saveFinds(store, state.finds);
-  if (!state.own) { $('#own-lat').value = finds.latestSite(state.finds).lat; $('#own-lon').value = finds.latestSite(state.finds).lon; }
   logDone();
   findStatus(`${kept ? 'Saved on this device' : 'Kept for this visit only: this browser blocks storage'}: ${scout.findLine(f)}. `
-    + (finds.cellOf(D.field, f.lat, f.lon) ? 'It is pinned on the field.' : 'It is outside the demo square, so it is listed below.')
-    + (state.own ? '' : ' Its position is filled in under step 1 for the NASA dates.'));
+    + (finds.cellOf(D.field, f.lat, f.lon) ? 'It is pinned on the field.' : 'It is outside this square, so it is listed below.'));
 }
 
 async function onFindClick(kind) {
@@ -508,24 +365,6 @@ function bind() {
     const f = [...e.dataTransfer.files].find(x => x.type.startsWith('image/'));
     if (f) ingest(f, f.name);
   });
-  $('#gallery').addEventListener('click', async e => {
-    const b = e.target.closest('[data-g]'); if (!b) return;
-    const it = D.gallery[Number(b.dataset.g)];
-    ingest(await (await fetch(it.file)).blob(), it.caption);
-    $('#identify').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-  });
-  $('#risk-table').addEventListener('click', e => {
-    const b = e.target.closest('[data-rot]'); if (!b) return;
-    const s = { rotation: b.dataset.rot, i: Number(b.dataset.i) };
-    state.sel = state.sel && state.sel.rotation === s.rotation && state.sel.i === s.i ? null : s;
-    renderPanel();
-  });
-  $('#evidence').addEventListener('click', e => {
-    const b = e.target.closest('[data-remove]'); if (!b) return;
-    const [gone] = state.evidence.splice(Number(b.dataset.remove), 1);
-    if (gone === state.cur) state.cur = state.log = null;
-    rebuildPins(); renderPanel();
-  });
   $('#log').addEventListener('click', e => {
     const l = e.target.closest('[data-log]'), f = e.target.closest('[data-find]');
     if (l) onLogClick(l.dataset.log); else if (f) onFindClick(f.dataset.find);
@@ -533,18 +372,6 @@ function bind() {
   $('#memory').addEventListener('click', e => {
     const d = e.target.closest('[data-del]'), f = e.target.closest('[data-find]');
     if (d) onDelete(d.dataset.del); else if (f) onFindClick(f.dataset.find);
-  });
-  $('#rank-year').addEventListener('change', e => { state.rankYear = e.target.value; renderRank(); });
-  $('#rank-light').addEventListener('change', e => { state.light = e.target.checked; renderRank(); });
-  $('#own').addEventListener('submit', e => { e.preventDefault(); loadOwn(parseCoords($('#own-lat').value, $('#own-lon').value)); });
-  $('#own-reset').addEventListener('click', () => { try { localStorage.removeItem(OWN_KEY); } catch { /* nothing stored */ } useField(null); });
-  $('#fields').addEventListener('click', e => {
-    const b = e.target.closest('button[data-field]');
-    if (!b) return;
-    const q = new URLSearchParams(location.search);
-    q.set('field', b.dataset.field);
-    try { localStorage.setItem(FIELD_KEY, b.dataset.field); } catch { /* storage blocked: the URL still carries it */ }
-    location.search = q.toString();
   });
   $('#pick-open').addEventListener('click', openFieldMap);
   $('#pick-build').addEventListener('click', buildHere);
@@ -555,93 +382,11 @@ function bind() {
     navigator.geolocation.getCurrentPosition(p => { centerPicker($('#pick'), { lat: p.coords.latitude, lon: p.coords.longitude }, 16); $('#pick-status').textContent = 'Tap inside your field.'; },
       () => { $('#pick-status').textContent = 'No position from this device. Zoom the map by hand.'; }, { enableHighAccuracy: true, timeout: 15000 });
   });
-  $('#own-here').addEventListener('click', () => {
-    if (!navigator.geolocation) { $('#own-status').textContent = 'This browser gives no position. Type the coordinates.'; return; }
-    navigator.geolocation.getCurrentPosition(p => loadOwn(parseCoords(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))),
-      () => { $('#own-status').textContent = 'The position was refused or not available. Type the coordinates.'; });
-  });
-  $('#rank-forage').addEventListener('input', e => {
-    const v = Number(e.target.value);
-    state.forage = Number.isFinite(v) ? Math.min(20, Math.max(0, v)) : 0; renderRank();
-  });
-  for (const z of ['upland', 'pocket']) $(`#zone-${z}`).addEventListener('click', () => { state.zone = z; renderPanel(); });
-  $('#sec-traps').addEventListener('input', e => {
-    const t = e.target;
-    if (t.dataset.trap) (sheet.counts[t.dataset.trap] ??= [])[Number(t.dataset.lift)] = t.value;
-    else if (t.dataset.date) sheet.dates[Number(t.dataset.date)] = t.value;
-    else if (t.id === 'count-genus') sheet.genus = t.value;
-    else return;
-    try { localStorage.setItem(SHEET_KEY, JSON.stringify(sheet)); } catch { /* storage blocked: the sheet still works for this visit */ }
-    renderCounts();
-  });
-  $('#sec-traps').addEventListener('click', e => {
-    const f = e.target.closest('[data-file]');
-    if (f) saveFile(...FILES[f.dataset.file]());
-  });
-  $('#record-copy').addEventListener('click', async e => {
-    try { await navigator.clipboard.writeText(recordNow()); e.target.textContent = 'Copied'; }
-    catch { getSelection().selectAllChildren($('#record')); }   // clipboard refused: leave the text selected
-  });
   $('#sw-controls').addEventListener('change', () => {
     state.sw.chosen = [...document.querySelectorAll('#sw-controls [name=pri]:checked')].map(i => i.value);
-    state.sw.current = $('#sw-current').value; state.sw.tillage = $('#sw-tillage').value;
+    state.sw.current = $('#sw-current').value;
     renderPanel();
   });
-  const saveHist = (status) => {
-    const kept = DEMO_RUN || hist.saveHistory(localStorage, histField(), state.hist);
-    renderHistory(kept ? status : 'Kept for this visit only: this browser blocks storage.');
-    renderPanel();
-  };
-  $('#hist-edit').addEventListener('change', e => {
-    const y = e.target.closest('[data-hist-year]');
-    if (y) {
-      const entries = { ...state.hist.entries };
-      if (y.value) entries[y.dataset.histYear] = y.value; else delete entries[y.dataset.histYear];
-      state.hist = { ...state.hist, entries };
-      saveHist('Saved. The pest levels and the rotations below use these years.');
-      return;
-    }
-    if (e.target.matches('[data-last-hay]')) {
-      const v = Number(e.target.value);
-      state.hist = { ...state.hist, lastHay: e.target.value && Number.isInteger(v) && v > 1900 && v < D.risk.start_year ? v : null };
-      saveHist(state.hist.lastHay ? 'Saved.' : 'No last hay year: the count runs from the first known year.');
-    }
-  });
-  $('#hist-edit').addEventListener('click', e => {
-    if (e.target.closest('[data-hist-confirm]')) {
-      const sat = satNow();
-      state.hist = { ...state.hist, entries: Object.fromEntries(hist.windowYears(D.risk.start_year).filter(y => sat[y]).map(y => [y, sat[y]])) };
-      saveHist('Confirmed: the agronomist record says you checked these years.');
-    } else if (e.target.closest('[data-hist-reset]')) {
-      state.hist = { entries: {}, lastHay: null };
-      saveHist('Back to the satellite years.');
-    }
-  });
-  $('#sw-build').addEventListener('change', e => {
-    const y = e.target.closest('[data-build-year]');
-    if (y) { state.draft[Number(y.dataset.buildYear)] = y.value; return; }
-    if (e.target.matches('[data-build-from]') && seqOf(e.target.value)) { state.draft = [...seqOf(e.target.value)]; renderBuilder(); }
-  });
-  $('#sw-build').addEventListener('click', e => {
-    if (e.target.closest('[data-build-add]')) {
-      const r = custom.addCustom(state.custom, state.draft, $('#build-name').value, D.crops);
-      if (r.error) { $('#build-status').textContent = custom.ERRORS[r.error]; return; }
-      state.custom = r.list;
-      const kept = DEMO_RUN || custom.saveCustom(localStorage, state.custom);
-      renderControls();
-      renderBuilder(kept ? `Added "${r.list[r.list.length - 1].name}": it is in the table and the cards below.` : 'Added for this visit only: this browser blocks storage.');
-      renderPanel();
-      return;
-    }
-    const rm = e.target.closest('[data-build-remove]');
-    if (rm) {
-      state.custom = custom.removeCustom(state.custom, rm.dataset.buildRemove);
-      if (state.sw.current === rm.dataset.buildRemove) state.sw.current = state.sw.defaultCurrent;
-      if (!DEMO_RUN) custom.saveCustom(localStorage, state.custom);
-      renderControls(); renderBuilder('Removed.'); renderPanel();
-    }
-  });
-  $('#show-pocket').addEventListener('change', e => scene.setPocket(e.target.checked));
   $('#layer').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) showLayer(b.dataset.view); });
   $('#mapnote').addEventListener('click', e => mn.onClick(e));
   scene.onPinPick(id => mn.onPin(id));
@@ -663,72 +408,43 @@ function showLayer(key) {
 
 async function main() {
   const baked = await getJSON('data/fields/index.json').catch(() => []), built = DEMO_RUN ? null : loadBuilt();
-  const fields = built ? [{ id: MINE, name: `My field (${built.field.site.lat.toFixed(3)}, ${built.field.site.lon.toFixed(3)})`, lat: built.field.site.lat, lon: built.field.site.lon }, ...baked] : baked;
+  const fields = built ? [{ id: MINE, lat: built.field.site.lat, lon: built.field.site.lon }, ...baked] : baked;
   // A field fetched earlier comes back from this device's storage, so it also opens with no network.
   let own = null, lastPick = null;
   if (!DEMO_RUN) try { own = JSON.parse(localStorage.getItem(OWN_KEY)); lastPick = localStorage.getItem(FIELD_KEY); } catch { /* blocked or bad JSON */ }
   const fieldId = DEMO_RUN ? null : startField(fields, location.search, { last: lastPick, site: own?.site });
   const base = fieldId === MINE ? '' : fieldId ? `data/fields/${fieldId}/` : 'data/';
-  // A baked field has its own pest table, from its crop history (taupin.bake --fields); a field built
-  // on this device gets one from its crop history in the browser (fieldengine.js, the rules of
-  // engine.py). The park's table assumes three years of sod and is only the fallback.
+  // A baked field has its own pest table from its crop history; a field built on this device gets
+  // one in the browser (fieldengine.js). The park's table is the fallback.
   const riskJSON = fieldId && fieldId !== MINE ? getJSON(`${base}risk.json`).catch(() => getJSON('data/risk.json')) : getJSON('data/risk.json');
-  const [field, baseRisk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([
+  const [field, baseRisk, soil, gallery, fieldRisk, crops, rotations, weather, smap] = await Promise.all([
     fieldId === MINE ? unpackField(built.field) : getJSON(`${base}field.json`), riskJSON,
-    ...['data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON)]);
+    ...['data/soil.json', 'data/gallery.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON)]);
   const risk = fieldId === MINE && built.history ? riskMatrix({ rotations: baseRisk.rotations, sources: baseRisk.sources, startYear: baseRisk.start_year, history: built.history }) : baseRisk;
   const views = VIEWS.filter(v => field.layers.some(l => l.key === v.layer));   // the park has no crop map
-  D = { field, risk, soil, gallery: gallery.items, metrics: null, model, fieldRisk, crops, rotations, weather, smap, demo: { soil, fieldRisk, weather }, fields, fieldId, views };
+  D = { field, risk, soil, gallery: gallery.items, fieldRisk, crops, rotations, weather, smap, demo: { soil, fieldRisk, weather }, fieldId, views };
   state.sw.current = rotations.default_current in risk.rotations ? rotations.default_current : Object.keys(risk.rotations)[0];
-  // A baked field brings its crop history: the rotation it follows and its grass/forage years.
-  if (field.crops?.rotation in risk.rotations) state.sw.current = field.crops.rotation;
-  state.sw.defaultCurrent = state.sw.current;
-  rules = makeRules(risk);
-  state.custom = DEMO_RUN ? [] : custom.loadCustom(localStorage, crops);
-  state.hist = DEMO_RUN ? { entries: {}, lastHay: null } : hist.loadHistory(localStorage, D.fieldId ?? (own ? 'own' : 'demo'));
-  state.draft = [...risk.rotations[state.sw.current]];
-  if (field.crops) { state.forage = field.crops.forage_years_last5; $('#rank-forage').value = state.forage; }
-  if (fieldId === MINE && built.soilAt) { state.light = built.soilAt.light; $('#rank-light').checked = state.light; }
-  $('#fields').innerHTML = [...fields, { id: 'demo', name: 'Demo park (Bois-de-Liesse)' }].map(f =>
-    `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? 'demo')}">${ui.esc(f.name)}</button>`).join('');
-  $('#crop-hist').innerHTML = ui.cropHistHTML(field.crops, ROTATION_NAMES);
-  renderHistory();
+  if (field.crops?.rotation in risk.rotations) state.sw.current = field.crops.rotation;   // a baked field's own rotation
   renderControls();
-  renderBuilder();
-  $('#smap').innerHTML = sw.smapHTML(smap, weather);
   scene = createScene($('#field'), field, base);
   mn = createMapNotes({ el: $('#mapnote'), state, scene, data: () => D, zoneOf, store, items: itemsNow, remove: removeEntry,
     refresh: () => { rebuildPins(); renderPanel(); }, status: findStatus, photoPending });
   $('#layer').innerHTML = views.map(v => `<button type="button" class="seg" data-view="${ui.esc(v.key)}" aria-pressed="${v.key === 'terrain'}">${ui.esc(v.label)}</button>`).join('');
   showLayer('terrain');
-  sheet.genus ??= risk.zones.upland.dominant_genus;
-  $('#traps').innerHTML = ui.trapsHTML(field, sheet);
-  const side = field.parcel.size * field.parcel.res_m;
-  $('#site').textContent = `${field.site.name}: a ${side} m square at ${Math.abs(field.site.lat)} ${field.site.lat < 0 ? 'S' : 'N'}, ${Math.abs(field.site.lon)} ${field.site.lon < 0 ? 'W' : 'E'}`
-    + (field.open ? `, with ${field.open.area_ha} ha of open ground where traps can go` : '');
   scene.ready.then(() => {
     const st = cropStatus(treeShare(scene.canopy()), field.parcel.area_ha, field.open?.area_ha);
     const el = $('#crop-status');
-    if (st && el) { el.textContent = st.text + '.'; el.classList.toggle('warn-t', !st.active); }
+    if (st && el) { el.textContent = st.text + '.'; el.closest('.crop-card').classList.toggle('dead', !st.active); }
   });
-  $('#field-src').innerHTML = Object.values(field.sources).map(s => `<li>${ui.esc(s)}</li>`).join('');
-  $('#gallery').innerHTML = ui.galleryHTML(D.gallery, null);
   bind();
-  const last = finds.latestSite(state.finds), def = own?.site ?? last;   // the latest find is the default field position
-  if (def) { $('#own-lat').value = def.lat; $('#own-lon').value = def.lon; }
   if (state.finds.length || state.notes.length) scene.ready.then(rebuildPins);
   if (memory.noteEffects(state.notes).wet) state.zone = 'pocket';   // a standing-water note opens the wet-ground pest table
   // A baked field opens with NASA POWER at its own position, unless this device already has a nearby fetch.
   if (fieldId && !DEMO_RUN && !(own?.site && km(own.site, field.site) < 1)) { useField(null); loadOwn({ lat: field.site.lat, lon: field.site.lon }); }
   else useField(own?.soil && own?.fr ? own : null);
-  renderCounts();
   renderModelStatus();
   // Absolute: ort resolves wasmPaths against its own module URL, not the page.
   state.model = await loadModel({ ort, wasmPaths: new URL('vendor/ort/', document.baseURI).href });
-  if (state.model.status === 'ready') {
-    D.metrics = await fetch('model/metrics.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
-    $('#gallery').innerHTML = ui.galleryHTML(D.gallery, state.model.labels);
-  }
   if (state.current.kind === 'loading' || state.current.kind === 'missing') state.current = { kind: state.model.status === 'ready' ? 'idle' : 'missing' };
   else if (state.model.status !== 'ready') state.current = { kind: 'missing' };
   renderModelStatus();

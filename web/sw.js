@@ -1,15 +1,14 @@
 // Offline copy of the app. Network first so a running server always wins, then the cache, so
 // the installed app opens with no network. Bump CACHE when vendor/ or the shell changes.
-const CACHE = 'taupin-v28';
+const CACHE = 'taupin-v29';
 const SHELL = [
-  './', 'index.html', 'app.css', 'nasa.css', 'img/hero.jpg', 'manifest.webmanifest',
+  './', 'index.html', 'app.css', 'img/hero.jpg', 'manifest.webmanifest',
   'js/i18n.js', 'js/i18n-fr.js', 'js/i18n-fr-text.js', 'js/i18n-fr-pat.js', 'js/i18n-fr-pat2.js', 'js/i18n-fr-post.js',
-  'js/app.js', 'js/scene.js', 'js/critters.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/engine.js', 'js/custom.js', 'js/history.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/organic.js', 'js/forecast.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/fieldengine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'js/soil.js', 'js/cropcheck.js', 'js/sceneclass.js', 'data/fields/index.json',
+  'js/app.js', 'js/scene.js', 'js/critters.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/engine.js', 'js/history.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/organic.js', 'js/forecast.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/fieldengine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'js/soil.js', 'js/cropcheck.js', 'js/sceneclass.js', 'data/fields/index.json',
   'vendor/three/three.module.js', 'vendor/three/three.core.js', 'vendor/three/OrbitControls.js',
   'vendor/ort/ort.wasm.min.mjs', 'vendor/ort/ort-wasm-simd-threaded.mjs', 'vendor/ort/ort-wasm-simd-threaded.wasm',
   'data/field.json', 'data/risk.json', 'data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json',
   'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json',
-  'vendor/fonts/instrument-serif-latin-400-normal.woff2', 'vendor/fonts/inter-latin-400-normal.woff2', 'vendor/fonts/inter-latin-600-normal.woff2',
   'data/layers/height.bin', 'data/layers/canopy.bin', 'data/layers/hillshade.bin', 'data/layers/slope.bin',
   'data/layers/twi.bin', 'data/layers/ndvi.bin', 'data/layers/lst.bin', 'data/layers/soil.bin', 'data/layers/om.bin', 'data/layers/zones.bin',
   'icons/icon.svg', 'icons/logo.svg', 'icons/favicon-32.png', 'icons/icon-192.png',

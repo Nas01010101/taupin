@@ -70,7 +70,7 @@ open complement, not a stronger predictor.
 | Trap dates and field ranking for any coordinates | `web/js/power.js`, `web/test/power.test.mjs` |
 | Six-step farmer flow on the first screen; model numbers under "Details" | `web/index.html`, `web/app.css` |
 | Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | `web/js/finds.js`, `web/test/finds.test.mjs` |
-| Research outline and challenge fit | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
+| Challenge fit | `docs/CHALLENGE_FIT.md` |
 | Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
 | GPM IMERG daily rain and SMAP L4 soil moisture | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
 

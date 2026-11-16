@@ -14,10 +14,8 @@ d'exemple : le carré de démonstration, trois champs agricoles préparés et le
 d'entraînement du modèle de risque des vers fil-de-fer s'y trouvent.
 
 Un modèle de photo dans le navigateur (DINOv2-S, 8 classes d'insectes du sol) épingle les trouvailles
-sur le champ en 3D et reclasse les rotations, ou envoie une photo incertaine au laboratoire. La même
-page date la semaine de pose des pièges-appâts, place dix pièges et enregistre les dénombrements
-avant qu'un producteur achète des semences enrobées d'insecticide. Elle fonctionne dans le
-navigateur, hors ligne ; les photos et les dénombrements ne quittent jamais l'appareil.
+sur le champ en 3D et reclasse les rotations, ou envoie une photo incertaine au laboratoire. Elle
+fonctionne dans le navigateur, hors ligne ; les photos et les notes ne quittent jamais l'appareil.
 
 Conçu pour NASA Space Apps 2026. Taupin est le nom français du coléoptère taupin et de sa larve, le
 ver fil-de-fer.
@@ -67,81 +65,21 @@ Prochaines étapes : des dénombrements de pièges de l'Ontario, des Prairies et
 pour les champs américains, l'humidité du sol de RADARSAT Constellation de l'Agence spatiale canadienne (ASC) comme couche directe, puis tout pays disposant de dénombrements de
 pièges, de cartes des sols et de terrain.
 
-## Deux publics
-
-Une seule base de code, deux versions qui partagent les règles NASA, le modèle de photo et le champ en 3D :
-
-- **Producteurs et agronomes : l'application Web** (`web/`). La première page compte six étapes : votre champ,
-  semaine de piégeage, où piéger, saisir les dénombrements, photo, quoi semer. Les chiffres des modèles se trouvent sous « Détails »
-  au bas de la page.
-- **Chercheurs : [`docs/RESEARCH.md`](docs/RESEARCH.md)**, le plan d'un article : question, méthodes,
-  résultats actuels tirés de `risk/model/metrics.json` et `model/metrics.json`, limites, évaluations
-  comparatives prévues et revues possibles.
-
-Comment Taupin répond au défi et à ses critères d'évaluation : [`docs/CHALLENGE_FIT.md`](docs/CHALLENGE_FIT.md).
-
 ## Fonctions
 
-- **Pourquoi.** Depuis le 1er août 2025 au Québec, les semences enrobées d'insecticide (classe 3A) exigent la prescription
-  d'un agronome (Code de gestion des pesticides, D. 470-2025). La preuve pour un champ est un
-  dénombrement au piège-appât. Dans Labrie et al. 2020, 92,6 % de 68 champs de maïs sont restés sous 1 ver fil-de-fer par piège.
-- **Quand piéger.** Les pièges-appâts se posent lorsque les 10 premiers cm du sol atteignent 12 °C. D'après NASA POWER
-  `TSOIL1`, de 1995 à 2025 : le 14 mai en moyenne, le 8 mai en 2025. Le panneau des pièges donne un calendrier selon la méthode
-  du RAP : pièges prêts à la date hâtive (6 mai, 1 année sur 10), posés à 12 °C, souvent au
-  semis, trois relevés à une semaine d'intervalle, et le dénombrement décide des semences de la saison suivante.
-- **Où piéger.** Un carré de 600 m tracé à partir du relief et du couvert végétal du lidar à 1 m, de la végétation NASA HLS,
-  de la température de surface printanière Landsat et de la carte des sols. Dix points de piégeage, espacés d'environ 25 m, sont
-  répartis dans quatre zones de dépistage définies à partir de ces couches. Les zones ne constituent pas une carte de risque.
-- **Quels champs en premier.** Un modèle ajusté sur 82 champs du Québec piégés au piège-appât classe un champ dans le tiers bas,
-  moyen ou élevé pour une année donnée, à partir de deux réponses du formulaire de champ et de deux valeurs de NASA POWER. Le
-  résultat est un rang, pas une probabilité.
-- **Votre propre champ.** Entrez une latitude et une longitude, ou utilisez la position de l'appareil. La page demande à
-  NASA POWER la température du sol et l'humidité de la zone racinaire à ce point et affiche la date de piégeage, la
-  date de chaque année depuis 1995 et le rang du champ. Seules les deux coordonnées quittent l'appareil,
-  et la réponse est conservée pour une utilisation hors réseau. La page demande aussi la pluie quotidienne NASA GPM IMERG et la
-  température de l'air, de sorte que les colonnes d'eau du tableau des rotations sont celles du champ. Le champ en 3D, les points de
-  piégeage et les niveaux de ravageurs restent ceux du champ affiché : le carré de démonstration, ou l'un des trois
-  champs agricoles préparés d'avance, dont les niveaux de ravageurs partent de leur propre historique de cultures.
-- **Dénombrer.** Une feuille pour trois relevés par piège. Chaque relevé est comparé séparément au seuil
-  de l'espèce dominante (3 par piège pour *Hypnoidus abbreviatus*, 1 pour *Agriotes*, *Limonius*
-  et *Melanotus* ; RAP Grandes cultures, Agri-Réseau doc. 115269).
-- **Identifier.** Déposez une photo ; un modèle à 8 classes (DINOv2-S, ONNX, exécuté avec onnxruntime-web) nomme
-  l'animal et l'épingle sur le champ. En dessous de son seuil d'abstention, il répond « incertain » et indique
-  comment envoyer la photo au laboratoire de diagnostic en phytoprotection du MAPAQ. Taupin n'envoie rien.
-- **Consigner les observations.** Une fois la photo nommée, « Enregistrer où je l'ai trouvé » lit la position de l'appareil, ou le GPS
-  de la photo si vous le choisissez, seulement à ce clic. Les observations restent dans le navigateur, apparaissent comme épingles sur le
-  champ lorsqu'elles tombent dans le carré de démonstration, vont dans le dossier de l'agronome et s'exportent en CSV et
-  en GeoJSON. La dernière observation remplit les coordonnées de « Votre champ ». « Supprimer toutes les observations » les efface.
-- **Planifier.** Sept rotations pour 2026 à 2030 : maïs chaque année, maïs et soya (indiquée comme rotation actuelle;
-  le producteur peut en indiquer une autre), maïs-soya-blé, maïs-sarrasin-soya-blé, sarrasin d'abord
-  (maïs en année 3, pour un champ qui sort du foin), soya-blé sans maïs, et deux années de maïs
-  suivies de soya et de blé. Chacune reçoit
-  le déficit hydrique en année sèche (pluie GPM IMERG comparée au besoin en eau des cultures selon FAO-56), les jours de forte pluie sur sol
-  nu, le facteur de couverture de l'USLE pour le travail du sol choisi (OMAFRA 23-005), l'azote à acheter (CRAAQ, MAPAQ),
-  les résidus de culture retournés au sol (Lal 2005) et les niveaux de ver fil-de-fer et de chrysomèle des racines du maïs. Le producteur coche ce qui
-  compte pour lui et les rotations sont classées selon ces critères. Chaque carte de rotation indique pourquoi elle est proposée, les
-  preuves, les gains et les pertes par rapport à la rotation actuelle, les données manquantes et les risques. Une
-  valeur sans source s'affiche comme ? et n'est jamais comptée comme zéro.
-- **Votre propre rotation.** Sous « Construire votre propre rotation », le producteur choisit une culture pour chaque année, parmi
-  les cultures dont les valeurs sont sourcées dans `web/data/crops.json` (une culture ajoutée à ce fichier devient sélectionnable),
-  et ajoute jusqu'à trois rotations, conservées dans le navigateur seulement. Elles s'ajoutent au tableau, aux cartes et au
-  choix de « rotation actuelle ». Leurs niveaux de ravageurs viennent de `web/js/engine.js`, un portage ligne par ligne de
-  `src/taupin/engine.py` qui lit les constantes de règles dans `risk.json` ; `web/test/engine.test.mjs`
-  le compare à chaque préréglage de `risk.json`, à chaque séquence de 5 ans des quatre cultures et à 80
-  cas tirés au hasard avec traces (`python -m taupin.engine_parity` écrit le fichier de référence). Le texte de leurs cartes est
-  rédigé à partir des règles du moteur qui se sont appliquées, chacune avec sa source. Elles partent du même historique de cultures
-  que les préréglages : celui du champ lui-même pour un champ agricole préparé d'avance, trois années de prairie pour le parc.
-- **Votre historique de cultures.** Sous la bande des cultures, « Vérifier votre historique de cultures » affiche 2021 à 2025, prérempli
-  à partir de la carte satellitaire des cultures pour un champ agricole préparé d'avance (avec sa part des cellules ouvertes) et vide
-  ailleurs, ainsi que la dernière année de foin ou de pâturage si elle est antérieure. Une année modifiée par le producteur, ou une dernière année
-  de foin, devient le point de départ du moteur : chaque rotation, préréglages compris, est alors évaluée dans le
-  navigateur à partir de ces années (`web/js/history.js`, `web/js/engine.js`). À Laval, du soya en 2025 au lieu
-  de maïs fait passer la chrysomèle des racines du maïs de 2026 de ÉLEVÉ à FAIBLE. Le dossier de l'agronome énumère chaque année avec sa
-  source (carte satellitaire, confirmée, ou saisie par le producteur). Conservé dans le navigateur seulement, par champ.
-  `web/test/history.test.mjs` vérifie aussi que le tableau préparé d'avance de chaque ferme est égal au résultat du moteur du navigateur.
-- **Remettre.** Les points de piégeage en GPX, CSV et GeoJSON, et un dossier en texte avec la date de piégeage, les
-  dénombrements, le classement et les photos, pour l'agronome. Taupin ne décide jamais de la prescription.
-  L'agronome signe.
+- **Votre champ en 3D.** Choisissez un point sur une carte. La page construit un carré de 600 m à
+  partir de l'altitude (lidar 1 m au Canada, tuiles de terrain mondiales ailleurs) avec les couches
+  de couvert végétal, de température de surface, de sol et de matière organique.
+- **Est-ce un champ en culture ?** La moitié ou plus du carré sous un couvert de 3 m ou plus : non.
+- **Rotations classées.** Sept rotations sur cinq ans, évaluées avec la pluie NASA GPM IMERG et les
+  données de sol SMAP et POWER : manque d'eau en année sèche, perte de sol (couverture USLE), azote
+  à acheter, résidus retournés et ravageurs du sol. L'agriculteur coche ce qui compte et indique sa
+  rotation actuelle ; les cartes se reclassent.
+- **Photos et notes.** Une photo d'insecte du sol, d'eau stagnante, de couvert ou de rigole est
+  épinglée sur le champ. Un modèle à 8 classes (DINOv2-S, ONNX, dans le navigateur) nomme les
+  insectes du sol et répond « incertain » sous son seuil. Notes et photos restent sur l'appareil et
+  modifient le classement.
+- L'agriculteur et l'agronome décident.
 
 ## Travaux existants
 
@@ -330,20 +268,6 @@ Photos de la galerie (Wikimedia Commons) :
 - Aucun producteur ni agronome n'a encore essayé l'outil.
 - NASA POWER est une grille d'environ 50 km ; un champ peut devancer ou suivre de quelques jours les dates affichées.
 - Ce n'est pas un produit de la NASA. Il utilise des données ouvertes de la NASA.
-
-## Citer
-
-```bibtex
-@software{taupin2026,
-  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for any field},
-  author = {{Taupin contributors}},
-  year  = {2026},
-  url   = {https://github.com/Nas01010101/taupin},
-  note  = {NASA Space Apps Challenge 2026}
-}
-```
-
-Citez aussi les sources de données ci-dessus, en particulier NASA POWER, NASA HLS et Labrie et al. 2020.
 
 ## Sortie sur le terrain
 
