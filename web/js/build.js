@@ -194,7 +194,7 @@ export async function buildField(site, { fetchFn = fetch, decodePNG = decodePNGB
 
   // Where traps can go: farmed ground last year (or open ground without crop maps), under 2 m of
   // canopy, 15 m in from the square's edge; then the patch the farmer clicked.
-  onStep('Finding your field and placing the traps…');
+  onStep('Finding the open ground in your field…');
   const edge = Math.ceil(EDGE_M / res), inside = i => { const r = Math.floor(i / n), c = i % n; return r >= edge && c >= edge && r < n - edge && c < n - edge; };
   const lowCanopy = i => !canopy || canopy[i] < TREE_MIN_M;
   const centre = Math.floor(n / 2), ci = centre * n + centre;
@@ -207,7 +207,7 @@ export async function buildField(site, { fetchFn = fetch, decodePNG = decodePNGB
   const twiS = boxMean(twi, n, 7), k = Math.max(1, Math.min(4, Math.floor(areaHa / 2)));
   const zones = scoutingZones([twiS, dtm, slope], mask, k);
   const traps = placeTraps(zones, n, res).map(t => ({ ...t, ...(({ lat, lon }) => ({ lat: Math.round(lat * 1e6) / 1e6, lon: Math.round(lon * 1e6) / 1e6 }))(grid.latLonOf(t.row, t.col)) }));
-  if (!traps.length) throw new Error('no open ground for traps in this square');
+  if (!traps.length) throw new Error('no open ground in this square');
 
   // Crop history: each year's most common class over the clicked field's 30 m cells.
   const m30 = new Uint8Array(CROP_N * CROP_N), cnt30 = new Uint16Array(CROP_N * CROP_N);

@@ -33,7 +33,7 @@ Demo video, 30 s: https://youtu.be/k4BG-ckcc1k, also in [`docs/assets/demo-30s.m
 
 The video, scene by scene, with the code behind each part: [`docs/SYSTEM.md`](docs/SYSTEM.md).
 How it fits the challenge: [`docs/CHALLENGE_FIT.md`](docs/CHALLENGE_FIT.md). Measured limits and
-open work: [`docs/PROJECT.md`](docs/PROJECT.md), [`docs/ROADMAP.md`](docs/ROADMAP.md).
+open work: [`docs/PROJECT.md`](docs/PROJECT.md).
 
 ## Run it
 

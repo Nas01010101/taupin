@@ -140,7 +140,8 @@ export function createScene(container, field, base = 'data/') {
   }
 
   // ------------------------------------------------------------ trap flags
-  const traps = new THREE.Group(); scene.add(traps);
+  // Kept as data for photo positions (finds.gridFit); hidden since the page no longer plans trapping.
+  const traps = new THREE.Group(); traps.visible = false; scene.add(traps);
   const flagMat = new THREE.MeshLambertMaterial({ color: 0xf2efe6 });
   function letterSprite(txt) {
     const c = document.createElement('canvas'); c.width = c.height = 64;

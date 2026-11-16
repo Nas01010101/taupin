@@ -36,7 +36,7 @@ Vidéo de démonstration, 30 s : https://youtu.be/k4BG-ckcc1k, aussi dans [`docs
 
 La vidéo, scène par scène, avec le code de chaque partie : [`docs/SYSTEM.md`](docs/SYSTEM.md).
 Lien avec le défi : [`docs/CHALLENGE_FIT.md`](docs/CHALLENGE_FIT.md). Limites mesurées et travail
-à venir : [`docs/PROJECT.md`](docs/PROJECT.md), [`docs/ROADMAP.fr.md`](docs/ROADMAP.fr.md).
+à venir : [`docs/PROJECT.md`](docs/PROJECT.md).
 
 ## Lancer l'application
 

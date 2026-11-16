@@ -303,6 +303,7 @@ export const DICT = {
   'Is this an active crop field?': 'Est-ce un champ en culture ?',
   'Your field': 'Votre champ',
   'Pick your field on a map': 'Choisir votre champ sur une carte',
+  'Finding the open ground in your field…': 'Recherche du terrain à découvert dans votre champ…',
   'Ranking for this field': 'Classement pour ce champ',
   "The farmer adds what satellites can't see": 'L\'agriculteur ajoute ce que les satellites ne voient pas',
   'Add a photo': 'Ajouter une photo',
