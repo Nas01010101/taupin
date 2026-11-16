@@ -26,7 +26,7 @@ import rasterio
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 
-from .grid import PARCEL, Grid
+from .grid import PARCEL, Grid, epsg_number
 
 PC_STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 HRDEM_ID = "QC-600023_52_CMM_2023-1m"
@@ -190,7 +190,8 @@ def crops(grid: Grid, work: Path, years=ACI_YEARS, log=print) -> dict:
     w, s, e, n = g.bounds
     stack = []
     for y in years:
-        q = (f"?bbox={w},{s},{e},{n}&bboxSR=32618&imageSR=32618&size={g.size},{g.size}&format=tiff"
+        sr = epsg_number(g.crs)   # the grid's own UTM zone, not always 18N
+        q = (f"?bbox={w},{s},{e},{n}&bboxSR={sr}&imageSR={sr}&size={g.size},{g.size}&format=tiff"
              "&pixelType=U8&interpolation=RSP_NearestNeighbor&f=image")
         with rasterio.MemoryFile(_get(ACI_URL.format(year=y) + q)) as m, m.open() as r:
             stack.append(r.read(1))
@@ -217,7 +218,7 @@ def main(argv=None) -> None:
     HRDEM_ID = a.hrdem_id
     grid = Grid.around(a.lat, a.lon) if a.lat is not None else PARCEL
     (a.work / "grid.json").write_text(json.dumps(dict(x0=grid.x0, y_top=grid.y_top, res=grid.res, size=grid.size,
-                                                      lat=a.lat, lon=a.lon)))
+                                                      crs=grid.crs, lat=a.lat, lon=a.lon)))
     steps = {"hrdem": hrdem, "hls": hls_ndvi, "landsat": landsat_lst,
              "park": functools.partial(park, way=a.way), "crops": crops}
     for name in a.only or list(steps):

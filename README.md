@@ -11,6 +11,9 @@ runs in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
+App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s
+with voice-over: [`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
+
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">
 <img src="docs/assets/networks.svg" width="49%" alt="The two models: the field model takes NASA POWER soil temperature and wetness plus two farmer inputs; the photo model is DINOv2-S with an 8-class head">
@@ -39,10 +42,10 @@ the code the page runs (2026-11-15).
 | Region | Lat, lon | Trap week (soil at 12 °C) | Field rank (year) | Inputs outside the Quebec training range | GPM rain, mm a year, 2001 to 2025 |
 |---|---|---|---|---|---|
 | Montérégie, Quebec | 45.63, -72.96 | 15 May | low (2026) | none | 824 to 1,334 |
-| Chatham-Kent, Ontario | 42.4, -82.18 | 30 Apr | low (2026) | none | 738 to 1,387 |
+| Chatham-Kent, Ontario | 42.4, -82.18 | 29 Apr | low (2026) | none | 738 to 1,387 |
 | Prince Edward Island | 46.35, -63.3 | 29 May | low (2026) | none | 865 to 1,515 |
 | Saskatoon, Saskatchewan | 52.13, -106.67 | 19 May | high (2026) | gwet_spring | 207 to 724 |
-| Story County, Iowa | 42.03, -93.62 | 23 Apr | high (2026) | gwet_spring | 645 to 1,317 |
+| Story County, Iowa | 42.03, -93.62 | 22 Apr | high (2026) | gwet_spring | 645 to 1,317 |
 | Magic Valley, Idaho | 42.56, -114.46 | 8 May | low (2026) | gwet_spring, tsoil_winter_min_c | 148 to 472 |
 
 The field rank was fitted on Quebec fields; where an input falls outside that range the page says so
@@ -196,8 +199,7 @@ flowchart LR
 
 Another field is baked with `python -m taupin.fetch_layers --work <dir> --lat <lat> --lon <lon> --way
 <osm way> --hrdem-id <project>`, then `python -m taupin.layers --work <dir> --irda <dir> --cansis <dir>
---out web/data/fields/<id> --name <name>`. It
-and opens with `?field=<id>` once listed in `web/data/fields/index.json`.
+--out web/data/fields/<id> --name <name>`. The field then opens with `?field=<id>` once listed in `web/data/fields/index.json`.
 
 - `src/taupin/`: risk engine, POWER soil-temperature trap window, field layers, bake, local server,
   CLI classifier.
@@ -214,7 +216,10 @@ years, mean of the last 10, straight-line trend, average of the two). Each one i
 rolling-origin backtest (fit on the years up to t, predict t + 1 to t + 5), the lowest error is
 used, and the 80 % range is the 10th to 90th percentile of that model's own backtest misses. On
 the demo field (POWER TSOIL1 1995-2025) the mean wins: trap date miss 6.9 days against 8.4 for the
-trend, rootworm hatch 3.8 against 4.2. No weather forecast is used.
+trend, rootworm hatch 3.8 against 4.2. The range comes from the same misses that picked the model,
+so it is also checked on misses it was not built from (`rangeCheck`: each miss against the range
+made from the earlier ones): on the demo field the trap-date range held 61 of 70 times (87 %).
+No weather forecast is used.
 
 Tests: `uv run pytest` (engine, soil, bake, classifier parity, server, web checks) and
 `node --test web/test/*.test.mjs` (preprocessing, softmax, abstain, risk view, renderers). The
@@ -319,7 +324,9 @@ Gallery photos (Wikimedia Commons):
 ```bibtex
 @software{taupin2026,
   title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for a Quebec field},
+  author = {{Taupin contributors}},
   year  = {2026},
+  url   = {https://github.com/Nas01010101/taupin},
   note  = {NASA Space Apps Challenge 2026}
 }
 ```

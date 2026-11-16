@@ -23,7 +23,7 @@ that count:
 
 | Step | What the farmer gets | Data behind it |
 |---|---|---|
-| Plan | wireworm and corn rootworm level per year for three rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
+| Plan | wireworm and corn rootworm level per year for seven rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
 | Scout: when | the week to set bait traps (soil at 12 °C in the top 10 cm) | NASA POWER `TSOIL1`, 1995 to 2025 |
 | Scout: which fields | the field's rank (low, middle or high third) among 82 Quebec fields | field risk model: 2 field-form answers + 2 NASA POWER values |
 | Scout: where | ten trap points spread over four scouting zones, as GPX, CSV and GeoJSON | lidar relief and wetness index, NASA HLS NDVI, Landsat surface temperature, soil map |
@@ -48,7 +48,7 @@ Taupin does not replace it. What Taupin adds around it:
 | one risk level for the whole field | trap points spread over the field's soil, relief and vegetation zones |
 | no weather or satellite input | NASA POWER soil temperature and soil wetness; satellite layers per cell |
 | no calendar | the week the soil reaches the trapping temperature |
-| current year | five years, three rotations side by side |
+| current year | five years, seven rotations side by side |
 | identification by sending samples | photo model in the browser, with the lab as the fallback |
 | account required, model and data not published | open code, open model, public data, runs offline |
 
@@ -72,7 +72,7 @@ open complement, not a stronger predictor.
 | Six-step farmer flow on the first screen; model numbers under "Details" | on `claude/two-versions` | `web/index.html`, `web/app.css` |
 | Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | on `claude/two-versions` | `web/js/finds.js`, `web/test/finds.test.mjs` |
 | Research outline and challenge fit | on `claude/two-versions` | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
-| Four rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
+| Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
 | GPM IMERG daily rain and SMAP L4 soil moisture | on `soil-water` | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
 
 ## Data
@@ -179,7 +179,7 @@ The full table, with file paths and weak points, is in `docs/CHALLENGE_FIT.md`.
 | "Over 90 %" | two sources, same research group | Labrie et al. 2020: 92.6 % of corn fields under 1 wireworm per trap (84 fields, 2012 to 2016). CÉROM report PV-3.2-2015-002: the threshold was exceeded in 10 % of cases in the 2011 to 2015 surveys, and in 25 % of 163 sites chosen for higher risk in 2016. Cite both in the deck |
 | Deck slide 6 and its capture showed the previous photo model | done | rebuilt from `model/metrics.json`; the cover runs `web/js/scene.js` on the same layer files as the app |
 | "Use my field": any coordinates, live NASA POWER call | done on `build` | `web/js/power.js` asks NASA POWER for TSOIL1 and GWETROOT at the entered coordinates and gives the trap date, the yearly dates and the field ranking; the two coordinates are the only thing sent. For the demo site the browser result equals the baked `soil.json` and `field_risk.json` (31 years of dates, 11 years of ranking inputs, 0 differences). The 3D field, the trap points and the pest levels stay the demo square; the rotation water columns use the field's own IMERG rain |
-| 3D field and trap points for any field | partly done | three Quebec farm fields are baked with `taupin.fetch_layers` and `taupin.layers`. Holes: HRDEM project coverage (Calumet has none; Saint-Eustache needs the Partie_NO tile), IRDA soil polygons only on sheet 31H12, `lightSoil` not yet derived from IRDA texture, POWER grid of about 50 km |
+| 3D field and trap points for any field | partly done | three Quebec farm fields are baked with `taupin.fetch_layers` and `taupin.layers`. Holes: HRDEM project coverage (Calumet has none; Saint-Eustache needs the Partie_NO tile), IRDA soil polygons only on sheet 31H12, `lightSoil` read off the soil map only where it can be: units with 20 % surface clay or more (or organic) cannot be sand or sandy loam; the map gives clay, not sand, so units under 20 % clay ask the farmer (`web/js/fieldrisk.js` `soilLightCheck`; Saint-Eustache asks, Laval and Mirabel are no), POWER grid of about 50 km |
 | Route to the Quebec lab for unclear photos | done on `build` | an unclear photo shows the lab's steps: online form first, then images by email or samples by post, first answer in 24 to 48 h (MAPAQ Laboratoire d'expertise et de diagnostic en phytoprotection, quebec.ca). The farmer sends it; the app sends nothing |
 | French interface | done | `web/js/i18n-fr.js`; the users are Quebec farmers |
 | Soil organic matter in the app and the pest engine | done | `src/taupin/organic.py` bakes an `om` layer and per-unit values from CanSIS ORGCARB x 1.724; `web/js/organic.js` adds SoilGrids 2.0 0-30 cm for any point; a measured value over the RAP factor of 10 % switches the wireworm case. Saint-Eustache: survey 7.1 %, SoilGrids 5.9 %. The park has carbon for 4.4 of 36 ha, so SoilGrids or the default is used there |
@@ -217,8 +217,8 @@ model leaves out:
 
 ## Submission checklist
 
-- [ ] Deck at 7 slides or fewer (done), public link, no login (shared as "anyone with the link"; check it in a private window)
-- [ ] Public repository with licence, README, run commands
+- [x] Deck at 7 slides or fewer, public link, no login
+- [x] Public repository with licence, README, run commands
 - [ ] References list covering NASA POWER, GPM IMERG, SMAP L4, FAO-56, OMAFRA 23-005, CRAAQ and MAPAQ nitrogen grids, Lal 2005, HLS, Landsat, HRDEM, IRDA, CanSIS, OpenStreetMap, Labrie et al. 2020, GBIF, Wikimedia Commons, VFF QC, RAP and MAPAQ documents
-- [ ] All text in English
+- [x] Interface in English and French (`?lang=fr`)
 - [ ] Every number in the deck and README traceable to `model/metrics.json` or `risk/model/metrics.json`

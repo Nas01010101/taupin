@@ -1,16 +1,16 @@
 # Challenge fit
 
 NASA Space Apps 2026, challenge "Field Shift: Adapting Farms with NASA Data".
-Written 2026-11-15 on branch `claude/two-versions`.
+Written 2026-11-15.
 
 ## What was verified and what was not
 
 | Item | State | Source |
 |---|---|---|
 | The challenge page exists | verified by search result title only | https://www.spaceappschallenge.org/2026/challenges/field-shift-adapting-farms-with-nasa-data/ |
-| Challenge text (objectives, data list) | **to check**: the page could not be opened from this session (the host is outside the session's allowed network) | open the page above and paste the objectives into the table below |
+| Challenge text (objectives, data list) | not quoted here; the summary below is from a secondary source | the challenge page above |
 | Objectives as summarised below | secondary source, not the official text | Sonoma State Space Apps 2026 page, https://edeon.sonoma.edu/nasaspaceapps-26/ |
-| The five judging criteria: Impact, Creativity, Validity, Relevance, Presentation | verified by search results of the official guides; exact 2026 wording **to check** | https://www.spaceappschallenge.org/resources/judging-awards-guide , https://www.spaceappschallenge.org/resources/project-submission-guide/ |
+| The five judging criteria: Impact, Creativity, Validity, Relevance, Presentation | from the official judging and submission guides | https://www.spaceappschallenge.org/resources/judging-awards-guide , https://www.spaceappschallenge.org/resources/project-submission-guide/ |
 | Official list of NASA data for this challenge | not found | |
 
 The secondary summary of the challenge: a decision-support tool that pairs NASA Earth observations
@@ -22,12 +22,12 @@ strategies for soil health under changing conditions.
 | Objective (secondary summary) | Where Taupin meets it | What is weak |
 |---|---|---|
 | Use NASA Earth observations | NASA POWER `TSOIL1` sets the trap week (`web/js/power.js`, `src/taupin/soil.py`); `GWETROOT` and winter `TSOIL1` are two of the four ranking inputs (`risk/fit.py`, `web/js/fieldrisk.js`); NASA HLS NDVI is a layer of the 3D field (`src/taupin/layers.py`, `web/data/layers/ndvi.bin`); NASA GPM IMERG daily rain sets the rotation water and heavy-rain columns for any coordinates (`web/js/power.js` `weatherURL`, `web/js/soilwater.js`); NASA SMAP L4 root-zone soil moisture checks the POWER wetness input, anomaly r = 0.78 over 126 months (`src/taupin/smap.py`, `web/data/smap.json`) | HLS and Landsat are baked for one square; SMAP is shown for the demo field only |
-| Pair them with local soil information | IRDA soil map and CanSIS texture under the 3D field (`web/data/layers/soil.bin`); the "sand or sandy loam" ranking input | no soil map for a field outside the demo square: the farmer ticks a box |
-| Crop traits and farmer priorities | FAO-56 crop coefficients and stage lengths, OMAFRA USLE crop and tillage factors, CRAAQ and MAPAQ nitrogen rates, Lal 2005 residue ratios, one source per value (`web/data/crops.json`); pest rules with a source each (`src/taupin/engine.py`, `web/data/risk.json`); the farmer ticks which of five priorities count (pests, dry-year water, soil loss, nitrogen, residue), picks the tillage and marks the current rotation (`web/js/swui.js`) | buckwheat has no FAO-56 coefficient or Quebec nitrogen rate, so its years show ?; priorities have equal weight; no yield or price; pest levels follow the field's own crop history only on the three baked farm fields |
+| Pair them with local soil information | IRDA soil map and CanSIS texture under the 3D field (`web/data/layers/soil.bin`); the "sand or sandy loam" ranking input, read off the soil map where every unit has 20 % clay or more (`web/js/fieldrisk.js` `soilLightCheck`) | the map gives surface clay, not sand: under 20 % clay, and for typed coordinates with no soil map, the farmer ticks a box |
+| Crop traits and farmer priorities | FAO-56 crop coefficients and stage lengths, OMAFRA USLE crop and tillage factors, CRAAQ and MAPAQ nitrogen rates, Lal 2005 residue ratios, one source per value (`web/data/crops.json`); pest rules with a source each (`src/taupin/engine.py`, `web/data/risk.json`); the farmer ticks which of five priorities count (pests, dry-year water, soil loss, nitrogen, residue), picks the tillage and marks the current rotation (`web/js/swui.js`) | buckwheat has no FAO-56 coefficient or Quebec nitrogen rate, so its years show ?; priorities have equal weight; no yield or price; pest levels do not change with the farmer's own field |
 | Test rotation strategies | seven rotations including the current one (corn and soybean by default), 2026 to 2030, ranked on the chosen priorities; each card gives why it is there, the evidence, gains and losses against the current rotation, the information gaps and the risks (`web/data/rotations.json`, `web/js/swui.js` `cardsHTML`) | no yield, cost or corn-after-corn yield penalty; on equal weights corn every year ranks first because it wins water, cover and residue; fixed start (sod) because the demo square is a park |
 | Soil health | USLE cover factor per crop and tillage, heavy-rain days on bare soil, crop residue returned as the organic matter input, nitrogen to buy (`web/js/soilwater.js`) | soil organic matter per map unit (CanSIS x 1.724) and SoilGrids 0-30 cm shown and fed to the RAP wireworm factor, but no organic matter balance over the rotation; USLE uses C only, not the field's K and LS; no cover crops; stored soil water at sowing not counted |
-| Changing conditions | trap date for each year since 1995 and its trend per decade (`web/js/power.js` `liveSoil`, `ui.trapHTML`) | the trend is shown in a details box; no climate projection |
-| Usable for a farmer | six-step task flow on the first screen (`web/index.html` `nav.flow`); offline PWA (`web/sw.js`); count sheet and agronomist record (`web/js/scout.js`) | no French interface; no farmer or agronomist has tried it |
+| Changing conditions | trap date for each year since 1995 and its trend per decade (`web/js/power.js` `liveSoil`, `ui.trapHTML`); trap date, rootworm hatch and rotation water columns forecast for 2026 to 2030 with an 80 % range from a rolling backtest (`web/js/forecast.js`, `risk.js` `trapForecast`, `soilwater.js` `projectClimate`) | forecasts extend the field's own history; no seasonal weather forecast or climate projection |
+| Usable for a farmer | six-step task flow on the first screen (`web/index.html` `nav.flow`); offline PWA (`web/sw.js`); count sheet and agronomist record (`web/js/scout.js`) | no farmer or agronomist has tried it |
 
 ## Judging criteria
 
@@ -54,7 +54,5 @@ strategies for soil health under changing conditions.
 
 ## Still open
 
-- Read the official challenge page and the 2026 judging wording and update the two tables above.
-- French interface.
 - Lidar, HLS, Landsat and the soil map per field, so the 3D field and trap points follow step 1.
 - A field trial with a farmer or an agronomist.

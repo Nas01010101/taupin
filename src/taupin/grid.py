@@ -1,11 +1,25 @@
-"""The field grid every baked layer shares: a north-up UTM 18N square of 2 m cells.
+"""The field grid every baked layer shares: a north-up UTM square of 2 m cells (zone 18N for the park).
 
 The extent is a 600 m square over the mapped meadows of the Secteur des Champs and the Chalet
 d'accueil des Champs (OpenStreetMap landuse=meadow ways 477189276 to 477189278).
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
+
+
+def utm_crs(lat: float, lon: float) -> str:
+    """The standard UTM zone of a point as an EPSG code: 326zz north of the equator, 327zz south,
+    zone zz = floor((lon + 180) / 6) + 1 (the Norway and Svalbard exceptions do not apply in
+    North America). Montreal is zone 18, Saskatoon 13, Iowa 15."""
+    zone = min(60, int(math.floor((lon + 180.0) / 6.0)) + 1)
+    return f"EPSG:{(32600 if lat >= 0 else 32700) + zone}"
+
+
+def epsg_number(crs: str) -> int:
+    """'EPSG:32618' -> 32618, for services that take a bare spatial reference number."""
+    return int(crs.split(":")[1])
 
 
 @dataclass(frozen=True)
@@ -31,10 +45,12 @@ class Grid:
 
     @classmethod
     def around(cls, lat: float, lon: float, side_m: float = 600.0, res: float = 2.0,
-               crs: str = "EPSG:32618") -> "Grid":
-        """A square of `side_m` centred on (lat, lon), its corner snapped to 30 m (the HLS and
-        crop inventory pixel) so the 30 m reads line up with whole satellite pixels."""
+               crs: str | None = None) -> "Grid":
+        """A square of `side_m` centred on (lat, lon) in the point's own UTM zone (utm_crs), its
+        corner snapped to 30 m (the HLS and crop inventory pixel) so the 30 m reads line up with
+        whole satellite pixels."""
         from rasterio.warp import transform
+        crs = crs or utm_crs(lat, lon)
         xs, ys = transform("EPSG:4326", crs, [lon], [lat])
         x0 = round((xs[0] - side_m / 2) / 30.0) * 30.0
         y_top = round((ys[0] + side_m / 2) / 30.0) * 30.0

@@ -114,3 +114,10 @@ test('dictionary and patterns are well formed', () => {
     if (typeof rep === 'string') assert.doesNotMatch(rep, /[–—]/);
   }
 });
+
+test('soil note and weak crop-history match are translated sentence by sentence', () => {
+  const soil = translate('Soil map units here: Rideau (46 % clay) and Chicot (12 % clay). Chicot has under 20 % clay and may be sand or sandy loam; the map gives clay, not sand. Tick the box if your part of the field is sand or sandy loam.');
+  assert.equal(soil.replace(/[\u00a0\u202f]/g, ' '), 'Unités de la carte des sols ici : Rideau (46 % d’argile) et Chicot (12 % d’argile). Chicot a moins de 20 % d’argile et peut être en sable ou en loam sableux; la carte donne l’argile, pas le sable. Cochez la case si votre partie du champ est en sable ou en loam sableux.');
+  const weak = translate('No listed rotation fits: the closest agree on only 2 of 5 recent years. Nothing is preset; mark the rotation you follow below.');
+  assert.doesNotMatch(weak, /closest|Nothing|rotation you/);
+});

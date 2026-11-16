@@ -71,6 +71,12 @@ function trapPlanHTML(p) {
     `<li><strong>The count decides the ${esc(p.decides)} seed.</strong> At or above the threshold, order coated seed for the field next spring; below it, untreated seed.</li></ol>`;
 }
 
+// How the range did on misses it was not built from (forecast.js rangeCheck), as a sentence.
+function rangeCheckText(c) {
+  if (!c?.n) return '';
+  return ` Checked on misses it was not built from (each tested against the range made from the earlier ones), the range held ${esc(c.inside)} of ${esc(c.n)} times (${esc(Math.round(100 * c.inside / c.n))} %).`;
+}
+
 export function trapHTML(tw, soil, evidence) {
   const sign = tw.trend >= 0 ? '+' : '';
   const ww = evidence.some(e => e.kind === 'wireworm');
@@ -83,7 +89,7 @@ export function trapHTML(tw, soil, evidence) {
     soilChartSVG(soil) +
     `<details class="more"><summary>Method and sources</summary><p>The trap date is the end of the first 7 days averaging 12 °C or more at 0-10 cm after 1 March. ` +
     `Trend ${sign}${tw.trend.toFixed(2)} ± ${tw.ci.toFixed(2)} days per decade (95 %): no clear shift.</p>` +
-    (tw.fc?.trap_12C ? `<p>Forecast: four models (${Object.entries(tw.fc.trap_12C.errors).map(([k, e]) => `${esc(k)} ${e.toFixed(1)} d`).join(', ')}, mean backtest miss) were fit on the years up to each year from the 11th on and asked for the next 1 to 5 years. The one with the smallest miss is used: ${esc(tw.fc.trap_12C.label)}. The range is the 10th to 90th percentile of its misses at that horizon. No seasonal weather forecast is used.</p>` : '') +
+    (tw.fc?.trap_12C ? `<p>Forecast: four models (${Object.entries(tw.fc.trap_12C.errors).map(([k, e]) => `${esc(k)} ${e.toFixed(1)} d`).join(', ')}, mean backtest miss) were fit on the years up to each year from the 11th on and asked for the next 1 to 5 years. The one with the smallest miss is used: ${esc(tw.fc.trap_12C.label)}. The range is the 10th to 90th percentile of its misses at that horizon.${rangeCheckText(tw.fc.trap_12C.check)} No seasonal weather forecast is used.</p>` : '') +
     `<ul class="src"><li>${esc(soil.sources.tsoil)}</li><li>${esc(soil.sources.trap)}</li><li>${esc(soil.sources.crw)}</li></ul></details>`;
 }
 
