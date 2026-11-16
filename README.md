@@ -4,12 +4,17 @@
 
 English · [Français](README.fr.md)
 
-Taupin helps a grain farmer in Canada or the US and their agronomist scout a field for wireworms before buying
-insecticide-coated seed. It dates the bait-trap week from NASA POWER soil temperature, places the
-traps on a 3D field built from lidar, NASA HLS, Landsat and the soil map, takes the counts, names a
-soil insect from a photo, and compares seven crop rotations over five years for water, soil loss,
-nitrogen, crop residue and pests, with NASA GPM rain and SMAP soil moisture. It
-runs in the browser, offline; photos and counts never leave the device.
+Taupin lets farmers anywhere model their field in 3D and compare seven five-year crop rotations.
+The field is built in the browser from elevation data: national lidar where it exists (NRCan
+HRDEM in Canada), global terrain tiles elsewhere. NASA data comes first: GPM IMERG rain and NASA
+POWER (MERRA-2) soil temperature through POWER, SMAP L4 root-zone soil moisture and HLS plant
+cover. SoilGrids gives soil organic matter worldwide. Quebec is the example field: the demo
+square, three baked farm fields and the wireworm risk model's training data are there.
+
+A browser photo model (DINOv2-S, 8 soil-insect classes) pins finds on the 3D field and re-ranks
+the rotations, or sends an unclear photo to the lab. The same page dates the wireworm bait-trap
+week, places ten traps and takes the counts before a farmer buys insecticide-coated seed. It runs
+in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
@@ -33,22 +38,23 @@ App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). De
   run in the browser as int8 ONNX. A photo becomes a dated pin on the 3D field; it tints the ground
   around the pin and reweights the rotation scores. Below 0.892 confidence the answer is "unclear"
   and the photo is meant for the lab.
-- **Your own field, one tap.** "Pick your field on a map" opens OpenStreetMap with the AAFC crop map
-  on top. A tap builds the 3D field for a 600 m square at that point, in the browser and in about
+- **Your own field, one tap, anywhere.** "Pick your field on a map" (`?field=mine` opens the saved
+  field) opens OpenStreetMap, with the AAFC crop map on top in Canada. A tap builds the 3D field for a 600 m square at that point, in the browser and in about
   6 s on a normal connection: NRCan HRDEM lidar (terrain and tree heights) is read straight from
   its cloud-optimized GeoTIFFs with HTTP range requests (about 2 MB, only the tiles needed), with
-  AWS Terrain Tiles as a fallback where there is no lidar (outside Canada). Then come wetness
+  AWS Terrain Tiles (worldwide, no tree heights) as the fallback where there is no lidar. Soil
+  organic matter comes from ISRIC SoilGrids anywhere. Then come wetness
   index, scouting zones and 10 traps (JS ports of `terrain.py` and `zones.py`, checked against the
-  Python output), plus 15 years of AAFC crop history over the field. The crop history sets the
+  Python output), plus, in Canada, 15 years of AAFC crop history over the field (empty elsewhere; the farmer enters it). The crop history sets the
   rotation, the forage years and the years since sod, so the pest table (a JS port of the
   engine, reproducing `risk.json` exactly) is computed for this field instead of assuming 3 years
   of sod. The field is kept on the device (about 210 kB) and opens with `?field=mine`.
 
-## Coverage: North America
+## Coverage: worldwide, six example regions
 
-NASA POWER and GPM IMERG cover every point in North America, so the trap week, the field rank and
-the rotation water columns run for any coordinates the farmer types or for one of six farm regions
-on the first screen. The table is `web/data/regions.json`, made by `node scripts/regions.mjs` with
+NASA POWER and GPM IMERG are global grids, so the trap week, the field rank and the rotation
+water columns run for any coordinates the farmer types or for one of six farm regions on the
+first screen (all in North America below). The table is `web/data/regions.json`, made by `node scripts/regions.mjs` with
 the code the page runs (2026-11-15).
 
 | Region | Lat, lon | Trap week (soil at 12 °C) | Field rank (year) | Inputs outside the Quebec training range | GPM rain, mm a year, 2001 to 2025 |
@@ -61,11 +67,11 @@ the code the page runs (2026-11-15).
 | Magic Valley, Idaho | 42.56, -114.46 | 8 May | low (2026) | gwet_spring, tsoil_winter_min_c | 148 to 472 |
 
 The field rank was fitted on Quebec fields; where an input falls outside that range the page says so
-and the rank is an extrapolation. The 3D terrain (NRCan lidar) and the soil map are one Quebec field.
+and the rank is an extrapolation. Lidar, the AAFC crop map and the IRDA soil map cover Canada; elsewhere the 3D field uses terrain tiles and SoilGrids.
 
 Next: trap counts from Ontario, the Prairies and the US to refit the rank per region, USGS 3DEP lidar
 for US fields, Canadian Space Agency RADARSAT Constellation soil moisture as a direct layer, then any country with trap
-counts, soil maps and terrain.
+counts.
 
 ## Two audiences
 
@@ -336,7 +342,7 @@ Gallery photos (Wikimedia Commons):
 
 ```bibtex
 @software{taupin2026,
-  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for a Quebec field},
+  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for any field},
   author = {{Taupin contributors}},
   year  = {2026},
   url   = {https://github.com/Nas01010101/taupin},

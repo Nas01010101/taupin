@@ -1,9 +1,15 @@
 # Taupin system
 
-Taupin compares five-year crop rotations for one Quebec field. The comparison covers soil, water,
-nitrogen and pests. NASA data comes first: rain, soil moisture, soil temperature and plant cover.
-The farmer's photos and notes come second and change the comparison for that field. The farmer and
-the agronomist make the decision.
+Taupin lets farmers anywhere model their field in 3D and compare seven five-year crop rotations. The
+comparison covers soil, water, nitrogen and pests. The field is built in the browser from elevation
+data: national lidar where it exists (NRCan HRDEM in Canada), global terrain tiles elsewhere. NASA
+data comes first: GPM IMERG rain and POWER (MERRA-2) soil temperature through NASA POWER, SMAP L4
+soil moisture and HLS plant cover. SoilGrids gives organic matter worldwide. Quebec is the example
+field. The farmer's photos and notes come second and change the comparison for that field. The farmer
+and the agronomist make the decision.
+
+Any point on the map: "Pick your field on a map" builds the field in about 6 s (`web/js/picker.js`,
+`web/js/build.js`) and keeps it on the device; `?field=mine` opens it.
 
 The demo video (`docs/assets/`, 40 s and 90 s cuts) shows the steps below. Each row names the part of
 the repo that does it.
@@ -18,7 +24,7 @@ the repo that does it.
 | Each photo updates the comparison | A photo goes through the photo model, gets pinned on the 3D field, and re-ranks the rotations | `web/js/classify.js`, `web/js/model.js`, `web/js/engine.js`, `web/js/soilwater.js` |
 | The field keeps its memory | Notes and photos stay with the field across seasons, in the browser's storage | `web/js/memory.js`, `web/js/memoryui.js` |
 
-The video ranks four rotations. The app ranks seven (`web/data/rotations.json`).
+The app ranks seven rotations (`web/data/rotations.json`).
 
 ## Inputs
 
@@ -29,9 +35,11 @@ The video ranks four rotations. The app ranks seven (`web/data/rotations.json`).
 | NASA POWER (MERRA-2) TSOIL1, GWETROOT, T2M | trap week (soil at 12 °C), field risk features | `src/taupin/fieldrisk.py`, `web/js/power.js` |
 | NASA HLS v2 (Landsat 8/9 and ESA Sentinel-2), 30 m, 2020 to 2025 | plant cover (NDVI) layer | `src/taupin/fetch_layers.py` |
 | USGS Landsat 8/9 surface temperature, 2016 to 2025 | where the soil warms first | `src/taupin/fetch_layers.py` |
-| AAFC Annual Crop Inventory, 2011 to 2025 | crop history per field, preset rotation | `src/taupin/crophist.py` |
-| NRCan HRDEM lidar, 1 m | relief, slope, wetness index, canopy height, tree crowns | `src/taupin/terrain.py` |
-| IRDA and AAFC CanSIS soil maps | soil units, organic matter | `src/taupin/soil.py`, `src/taupin/organic.py` |
+| AAFC Annual Crop Inventory, 2011 to 2025 (Canada) | crop history per field, preset rotation | `src/taupin/crophist.py` |
+| NRCan HRDEM lidar, 1 m (Canada) | relief, slope, wetness index, canopy height, tree crowns | `src/taupin/terrain.py` |
+| IRDA and AAFC CanSIS soil maps (Quebec fields) | soil units, organic matter | `src/taupin/soil.py`, `src/taupin/organic.py` |
+| ISRIC SoilGrids 2.0, 250 m, worldwide | organic matter for any picked field | `web/js/organic.js` |
+| AWS Terrain Tiles, worldwide | terrain where there is no lidar | `web/js/build.js` |
 | RAP Grandes cultures wireworm method | ten trap points, count threshold | `web/js/scout.js` |
 
 ## Models
