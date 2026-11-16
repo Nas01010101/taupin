@@ -78,3 +78,26 @@ def test_small_grains_are_grouped_as_grass_hosts():
     from taupin.engine import GRASS
     assert GROUPS[136] == "oat" and GROUPS[137] == "rye" and GROUPS[133] == "barley"
     assert {"oat", "rye", "barley"} <= GRASS
+
+
+def test_utm_zone_follows_the_point():
+    from taupin.grid import epsg_number, utm_crs
+    assert utm_crs(45.6917, -73.5504) == "EPSG:32618"     # Laval
+    assert utm_crs(52.13, -106.67) == "EPSG:32613"        # Saskatoon
+    assert utm_crs(42.03, -93.62) == "EPSG:32615"         # Story County, Iowa
+    assert utm_crs(46.35, -63.30) == "EPSG:32620"         # Prince Edward Island
+    assert utm_crs(45.5, -72.0) == "EPSG:32619"           # on a zone edge: the eastern zone
+    assert utm_crs(-33.9, 18.4) == "EPSG:32734"           # south of the equator
+    assert utm_crs(0.0, 180.0) == "EPSG:32660"            # the antimeridian stays in zone 60
+    assert epsg_number("EPSG:32613") == 32613
+
+
+def test_grid_around_uses_the_points_zone():
+    pytest.importorskip("rasterio")
+    from rasterio.warp import transform
+    from taupin.grid import Grid
+    g = Grid.around(52.13, -106.67)
+    assert g.crs == "EPSG:32613" and g.x0 % 30 == 0
+    x, y = transform("EPSG:4326", g.crs, [-106.67], [52.13])
+    assert g.x0 < x[0] < g.x0 + 600 and g.y_top - 600 < y[0] < g.y_top
+    assert Grid.around(45.6917, -73.5504).crs == "EPSG:32618"   # the baked Quebec fields keep 18N

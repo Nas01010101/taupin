@@ -342,7 +342,8 @@ def main(argv=None) -> None:
     gj = a.work / "grid.json"
     if gj.exists() and json.loads(gj.read_text()).get("lat") is not None:
         g = json.loads(gj.read_text())
-        grid = Grid(g["x0"], g["y_top"], g["res"], g["size"])
+        # A grid.json from before the crs was stored is UTM 18N, the zone all fields used then.
+        grid = Grid(g["x0"], g["y_top"], g["res"], g["size"], g.get("crs", "EPSG:32618"))
         site = {"name": a.name or f"{g['lat']:.4f}, {g['lon']:.4f}", "lat": g["lat"], "lon": g["lon"]}
     a.out.mkdir(parents=True, exist_ok=True)
     f = bake_layers(a.work, a.out, grid, sorted(a.irda.glob("**/Pedo_*.shp")), [a.cansis], site=site)
