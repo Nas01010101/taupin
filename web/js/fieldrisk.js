@@ -47,3 +47,37 @@ export function fieldRanking(model, fr, { year, forageYears = 0, lightSoil = 0 }
   const z = score(model, inputs);
   return { year, inputs, z, rank: rankOf(z, fr.rank_cutpoints), outside: outsideTraining(inputs, fr.training_range) };
 }
+
+// Can the "sand or sandy loam" input be read off the field's soil map? On the soil texture
+// triangle (Canadian System of Soil Classification, same classes as USDA) sand, loamy sand and
+// sandy loam all have under 20 % clay. The baked map gives surface clay but not sand, so a unit
+// with 20 % clay or more, an organic unit or a named non-sandy texture is not light, and a unit
+// under 20 % clay may or may not be. light: 0 when no unit can be light, null when the farmer
+// must say. Returns null when the field has no soil layer.
+export const LIGHT_MAX_CLAY = 20;
+export function soilLightCheck(field) {
+  const layer = field?.layers?.find(l => l.key === 'soil');
+  if (!layer?.classes?.length) return null;
+  const seen = new Set(), units = [];
+  for (const k of layer.classes.flatMap(c => c.components ?? [])) {
+    if (seen.has(k.name)) continue;
+    seen.add(k.name);
+    const t = String(k.texture ?? '').trim(), m = t.match(/(\d+(?:\.\d+)?) % clay/), clay = m ? Number(m[1]) : null;
+    const kind = /^organic/i.test(t) ? 'organic'
+      : clay != null ? (clay >= LIGHT_MAX_CLAY ? 'heavy' : 'maybe')
+      : !t || /sand/i.test(t) ? 'maybe' : 'heavy';
+    units.push({ name: k.name, kind, what: kind === 'organic' ? 'organic' : clay != null ? `${clay} % clay` : t ? t.split(' on ')[0] : 'texture not given' });
+  }
+  const maybe = units.filter(u => u.kind === 'maybe');
+  return { light: maybe.length ? null : 0, units, maybe };
+}
+
+const list = xs => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+// The sentence under the rank for a field with a soil map (soilLightCheck result).
+export function soilLightNote(chk) {
+  const all = `Soil map units here: ${list(chk.units.map(u => `${u.name} (${u.what})`))}.`;
+  if (chk.light === 0) return `${all} None can be sand or sandy loam (those have under ${LIGHT_MAX_CLAY} % clay), so that input is no.`;
+  return `${all} ${list(chk.maybe.map(u => u.name))} ${chk.maybe.length > 1 ? 'have' : 'has'} under ${LIGHT_MAX_CLAY} % clay and may be sand or sandy loam; ` +
+    'the map gives clay, not sand. Tick the box if your part of the field is sand or sandy loam.';
+}
