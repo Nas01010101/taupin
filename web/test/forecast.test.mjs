@@ -90,7 +90,7 @@ test('demo field: the trap-date range holds on misses it was not built from, clo
   const share = t.check.inside / t.check.n;
   assert.ok(share >= 0.7 && share <= 0.9, `held ${share}`);   // the bar in docs/PREDICTIONS.md
   assert.match(trapHTML(trapWindow(soil, 2026), soil, []), /the range held 61 of 70 times \(87 %\)/);
-
+});
 
 test('leap years do not shift the forecast: the same calendar date every year forecasts that date exactly', () => {
   const per_year = {};

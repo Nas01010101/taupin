@@ -203,4 +203,14 @@ export const PATTERNS = [
     `${m[1]}: ${sub(m[2])} (${{ 'satellite map': 'carte satellite', 'entered by the farmer': 'entré par l\'agriculteur', 'satellite map, confirmed by the farmer': 'carte satellite, confirmé par l\'agriculteur', 'not known': 'inconnu' }[m[3]]}${m[4] ? `; la carte satellite indiquait ${sub(m[4])}` : ''})`],
   [/^Last hay or pasture year, entered by the farmer: (\d{4})$/, 'Dernière année en foin ou pâturage, entrée par l\'agriculteur: $1'],
   [/^No hay or pasture year known: years since sod is a lower bound$/, 'Aucune année de foin ou pâturage connue: les années depuis la prairie sont une borne inférieure'],
+  // Soil note under the rank (fieldrisk.soilLightNote) and the weak crop-history match (ui.js).
+  [/^Soil map units here: ([^.;]+)$/, (m) => `Unités de la carte des sols ici: ${m[1].replace(/ \((\d+) % clay\)/g, ' ($1 % d\'argile)').replace(/ and ([^,]+)$/, ' et $1')}`],
+  [/^([^.;]+) (have|has) under (\d+) % clay and may be sand or sandy loam$/, (m) =>
+    `${m[1].replace(/ and ([^,]+)$/, ' et $1')} ${m[2] === 'have' ? 'ont' : 'a'} moins de ${m[3]} % d'argile et ${m[2] === 'have' ? 'peuvent' : 'peut'} être en sable ou en loam sableux`],
+  [/^the map gives clay, not sand$/, 'la carte donne l\'argile, pas le sable'],
+  [/^None can be sand or sandy loam \(those have under (\d+) % clay\), so that input is no$/, 'Aucune ne peut être en sable ou en loam sableux (ceux-ci ont moins de $1 % d\'argile), donc cette entrée est non'],
+  [/^Tick the box if your part of the field is sand or sandy loam$/, 'Cochez la case si votre partie du champ est en sable ou en loam sableux'],
+  [/^No listed rotation fits: the closest agree on only (\d+) of (\d+) recent years(?:; (\d+) of the last five years were hay or pasture, which no listed rotation has)?$/, (m) =>
+    `Aucune rotation de la liste ne correspond: les plus proches ne concordent que sur ${m[1]} des ${m[2]} dernières années${m[3] ? `; ${m[3]} des cinq dernières années étaient en foin ou pâturage, ce qu'aucune rotation de la liste n'a` : ''}`],
+  [/^Nothing is preset; mark the rotation you follow below$/, 'Rien n\'est présélectionné; indiquez ci-dessous la rotation que vous suivez'],
 ];
