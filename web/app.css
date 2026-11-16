@@ -256,6 +256,11 @@ details.how summary { cursor: pointer; color: var(--accent); margin-bottom: var(
 .plan { margin: 12px 0 16px; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45; }
 .plan li::marker { font-weight: 700; }
 
+/* Field picker (picker.js): a tap on the map builds the field (build.js). */
+.pick-wrap { margin: var(--s3) 0 var(--s4); }
+.pick-btn { font-weight: 600; padding: var(--s2) var(--s4); border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); }
+.pick-map { height: min(60vh, 420px); border-radius: 8px; margin: var(--s2) 0; background: var(--surface); }
+#pick-status { min-height: 1.4em; }
 .hist { margin: var(--s2) 0 var(--s3); font-size: var(--t-s); }
 .hist summary { cursor: pointer; font-weight: 600; }
 .hist-row { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: end; margin: var(--s2) 0; }
