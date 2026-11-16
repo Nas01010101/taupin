@@ -328,7 +328,7 @@ async function pixelsOf(blob) {
   return { data, w: bmp.width, h: bmp.height, thumb: t.toDataURL('image/jpeg', 0.85) };
 }
 
-// SCENE CLASSIFIER CALL SITE (the only one). web/js/sceneclass.js and data/scene_head.json are optional and not shipped yet:
+// SCENE CLASSIFIER CALL SITE (the only one). web/js/sceneclass.js and data/scene_head.json are optional:
 // when both load and the photo model has its `embedding` output, the head names the scene (insect,
 // standing water, ground cover, water channel or other) and memory.suggestKind turns it into a
 // pre-selected button. Otherwise, or on any error, the buttons stay manual.
@@ -336,8 +336,7 @@ let sceneHead;
 async function sceneAnswer(px) {
   try {
     const { ort, session, labels } = state.model, n = labels.input_size;
-    // labels.json sets scene_head once the head ships; until then no request goes out for the module.
-    if (!labels.scene_head || !session.outputNames.includes('embedding')) return null;
+    if (!session.outputNames.includes('embedding')) return null;
     const sc = await import('./sceneclass.js');
     sceneHead ??= await sc.loadSceneHead();
     const x = new ort.Tensor('float32', preprocess(px.data, px.w, px.h, labels), [1, 3, n, n]);

@@ -251,3 +251,106 @@ threshold was set for a stated accuracy on validation; the results table gives t
 answering on the test and OOD sets, and the threshold table gives a stricter setting. A deployment
 should check a few hundred of its own field photos before trusting either number.
 
+
+<!-- scene-head:start -->
+## Scene head (photo kind)
+
+Sorts a photo into insect or soil animal, standing water, ground cover, water channel or erosion, or other, before the animal model is used. It is a linear head on the 384-d `embedding` output of `model/taupin.onnx` (the class token after the final LayerNorm, the input of the animal head). Weights: `web/data/scene_head.json` (scene-v1, 29 KB). Browser function: `classifyScene(head, embedding)` in `web/js/sceneclass.js`. The animal model's logits, weights and 8 classes are unchanged; the ONNX file only gained the second output.
+
+### Images
+
+| class | train | val | test | sources | licences |
+|---|---|---|---|---|---|
+| insect | 565 | 395 | 491 | gbif 334, inaturalist 960, wikimedia_commons 157 | CC BY 1046, CC0 389, Public domain 16 |
+| standing_water | 66 | 22 | 22 | openverse_flickr 37, wikimedia_commons 73 | CC BY 79, CC0 15, Public domain 16 |
+| ground_cover | 63 | 22 | 21 | openverse_flickr 52, wikimedia_commons 54 | CC BY 60, CC0 10, Public domain 36 |
+| water_channel | 32 | 17 | 13 | openverse_flickr 16, wikimedia_commons 46 | CC BY 41, CC0 3, Public domain 18 |
+| other | 238 | 87 | 89 | inaturalist 369, wikimedia_commons 45 | CC BY 324, CC0 80, Public domain 10 |
+
+- insect: iNaturalist `val` rows of the animal model (the model was not fitted on them; split by observer into train and val here) and its OOD set (GBIF and Wikimedia Commons) as the insect test. The sealed test split of the animal model was not read.
+- standing water, ground cover, water channel or erosion, other: Wikimedia Commons categories and Openverse (Flickr) search results, listed per image in `data/scene_attribution.csv` (columns `source`, `group`); for other, also iNaturalist plants, fungi, birds, mammals, reptiles and amphibians. Only CC0, CC BY and public domain files; CC BY-SA, NC and ND files are excluded. Every row has url, author, licence and source page.
+- Every Commons and Openverse image was looked at on contact sheets; off-topic, duplicate-scene and wrong-class images were removed and are listed with a reason in `data/scene_exclude.csv`. Split by author (balanced assignment, about 60 / 20 / 20 per class), then near-duplicates across splits removed (dHash, Hamming distance 6 or less). Commons rows are capped because Wikimedia limits thumbnail downloads per IP.
+- ground cover includes stubble, mulch, wood chips, cover crops, crop residue, leaf litter and ploughed bare soil; water channel or erosion includes gullies, rills, washouts and eroded fields. Rivers, lakes and plain mud are in no class.
+
+### Result on the test split
+
+Head fitted on train only (C 0.1, balanced class weights); temperature 0.981 and abstain threshold 0.605 chosen on val (lowest top-1 probability with 95.0% val accuracy on answered images). Test read after those choices. Brackets: 95% bootstrap over images (2000 resamples).
+
+| set | n | accuracy | macro recall | coverage | accuracy when answering |
+|---|---|---|---|---|---|
+| test, all | 636 | 92.6% [90.6%, 94.7%] | 80.2% | 93.6% | 95.6% |
+| test, held-out authors (four non-insect classes) | 145 | 84.8% [78.6%, 90.3%] | 76.6% | 86.2% | 89.6% |
+| test, insect OOD set | 491 | 94.9% [92.9%, 96.7%] | 94.9% | 95.7% | 97.2% |
+
+Per class on the test split (correct / photos; recall; precision; answered correct / answered):
+
+| class | correct / n | recall | precision | answered |
+|---|---|---|---|---|
+| insect | 466/491 | 94.9% | 99.1% | 457/470 |
+| standing_water | 18/22 | 81.8% | 81.8% | 15/18 |
+| ground_cover | 13/21 | 61.9% | 65.0% | 12/16 |
+| water_channel | 9/13 | 69.2% | 90.0% | 7/10 |
+| other | 83/89 | 93.3% | 72.8% | 78/81 |
+
+Confusion matrix on the test split (rows true, columns predicted):
+
+| | insect | standing_water | ground_cover | water_channel | other |
+|---|---|---|---|---|---|
+| insect | 466 | 1 | 4 | 0 | 20 |
+| standing_water | 1 | 18 | 0 | 0 | 3 |
+| ground_cover | 0 | 2 | 13 | 0 | 6 |
+| water_channel | 0 | 1 | 1 | 9 | 2 |
+| other | 3 | 0 | 2 | 1 | 83 |
+
+Abstain threshold by validation accuracy target (coverage / accuracy when answering):
+
+| target | threshold | val | test |
+|---|---|---|---|
+| 90.0% | 0.388 | 100.0% / 92.1% | 99.2% / 93.2% |
+| 95.0% | 0.605 | 93.9% / 95.1% | 93.6% / 95.6% |
+| 98.0% | 0.815 | 84.7% / 98.0% | 85.7% / 98.2% |
+
+Re-splitting the authors of the four non-insect classes five ways (insect split fixed) gives test accuracy 90.2% to 92.7% (mean 91.4%) and macro recall 72.2% to 84.0%.
+
+Leave one source group out (the head is refitted without that Commons category or iNaturalist group, then scored on it; correct / images):
+
+| group | correct / n |
+|---|---|
+| other | inat-Amphibia | 21/25 |
+| other | inat-Aves | 52/60 |
+| other | inat-Fungi | 44/60 |
+| other | inat-Mammalia | 36/49 |
+| other | inat-Plantae | 116/150 |
+| other | inat-Reptilia | 13/25 |
+| standing_water | Puddles | 37/46 |
+| water_channel | Gully erosion | 16/22 |
+
+Four phone photos from the concept video folder (park, not farmland; not used for any choice):
+
+| photo | kind | confidence | unclear | insect | standing_water | ground_cover | water_channel | other |
+|---|---|---|---|---|---|---|---|---|
+| water | standing_water | 46.4% | True | 0.6% | 46.4% | 5.2% | 31.0% | 16.9% |
+| life | ground_cover | 71.4% | False | 4.8% | 0.1% | 71.4% | 16.4% | 7.3% |
+| residue | other | 90.5% | False | 0.1% | 0.4% | 8.5% | 0.6% | 90.5% |
+| rill | standing_water | 58.2% | True | 0.0% | 58.2% | 0.8% | 37.6% | 3.4% |
+
+Browser runtime (onnxruntime-web, wasm) against the CPU runtime on the same test images (`train/scene_wasm_check.py`): the int8 model gives slightly different embeddings per backend (cosine mean 0.9990, min 0.9918).
+
+| runtime | accuracy | macro recall | coverage | accuracy when answering |
+|---|---|---|---|---|
+| cpu | 92.6% | 80.2% | 93.6% | 95.6% |
+| wasm | 92.1% | 80.1% | 94.3% | 95.3% |
+
+Same class on both runtimes for 98.4% of images; the unclear flag differs for 1.7%; largest probability difference 0.231. The head was fitted on CPU-runtime embeddings.
+
+### Limits
+
+- Test sets for the three field classes are small (standing_water 22, ground_cover 21, water_channel 13), so their recalls (standing_water 81.8%, ground_cover 61.9%, water_channel 69.2%) have wide intervals.
+- On the four non-insect classes with held-out authors, accuracy is 84.8% and macro recall 76.6%. The all-class figure is higher because 491 of 636 test images are insects.
+- Training photos are web photos, mostly of roads, parks and gardens, not farm fields shot from a phone. The water channel images skew toward roadside washouts and a few photographers' series; the standing water images skew toward puddles on pavement and reflections.
+- None of the four phone photos below shows a rill or gully (the file named rill shows a pond with reflections), so water channel or erosion has not been checked on a phone photo. The photo of leaf litter on moss is labelled other, although leaf litter is in the ground cover class. The photo of bare soil with a root fragment has no animal in it and is labelled ground cover.
+- The head sorts the whole photo. It does not locate or count anything, and it does not measure water depth, extent or soil loss.
+- A photo of a crop pest in a field is an insect photo to this head; the animal model decides what it is.
+- Abstain threshold 0.605 gives 95.6% accuracy on the answered 93.6% of test images; photos below it are reported as unclear.
+- Base model: `model/taupin.onnx` sha256 `83a683cff881a6f056487d1ab3bb2d83862b3a03e4e70c2221f0791cc1cec241` (embedding output added; the head was fitted on embeddings from this file). The animal model file before the output was added has sha256 `b1f9bfaa18c2617e539f1cf3e9ea93bb9993f2eccd07b06b8f73ef17b1208cd7` and gives the same logits.
+<!-- scene-head:end -->
