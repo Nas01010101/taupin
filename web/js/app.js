@@ -24,6 +24,7 @@ import { buildField, packField, unpackField } from './build.js';
 import { soilAt } from './soil.js';
 import { riskMatrix } from './fieldengine.js';
 import { openPicker, centerPicker } from './picker.js';
+import { treeShare, cropStatus } from './cropcheck.js';
 import * as organic from './organic.js';
 
 const $ = s => document.querySelector(s);
@@ -327,15 +328,17 @@ async function pixelsOf(blob) {
   return { data, w: bmp.width, h: bmp.height, thumb: t.toDataURL('image/jpeg', 0.85) };
 }
 
-// SCENE CLASSIFIER CALL SITE (the only one). web/js/sceneclass.js and data/scene_head.json are optional:
+// SCENE CLASSIFIER CALL SITE (the only one). web/js/sceneclass.js and data/scene_head.json are optional and not shipped yet:
 // when both load and the photo model has its `embedding` output, the head names the scene (insect,
 // standing water, ground cover, water channel or other) and memory.suggestKind turns it into a
 // pre-selected button. Otherwise, or on any error, the buttons stay manual.
 let sceneHead;
 async function sceneAnswer(px) {
   try {
-    const sc = await import('./sceneclass.js'), { ort, session, labels } = state.model, n = labels.input_size;
-    if (!session.outputNames.includes('embedding')) return null;
+    const { ort, session, labels } = state.model, n = labels.input_size;
+    // labels.json sets scene_head once the head ships; until then no request goes out for the module.
+    if (!labels.scene_head || !session.outputNames.includes('embedding')) return null;
+    const sc = await import('./sceneclass.js');
     sceneHead ??= await sc.loadSceneHead();
     const x = new ort.Tensor('float32', preprocess(px.data, px.w, px.h, labels), [1, 3, n, n]);
     const r = sc.classifyScene(sceneHead, (await session.run({ [session.inputNames[0]]: x })).embedding.data);
@@ -705,6 +708,11 @@ async function main() {
   const side = field.parcel.size * field.parcel.res_m;
   $('#site').textContent = `${field.site.name}: a ${side} m square at ${field.site.lat} N, ${Math.abs(field.site.lon)} W`
     + (field.open ? `, with ${field.open.area_ha} ha of open ground where traps can go` : '');
+  scene.ready.then(() => {
+    const st = cropStatus(treeShare(scene.canopy()), field.parcel.area_ha, field.open?.area_ha);
+    const el = $('#crop-status');
+    if (st && el) { el.textContent = st.text + '.'; el.classList.toggle('warn-t', !st.active); }
+  });
   $('#field-src').innerHTML = Object.values(field.sources).map(s => `<li>${ui.esc(s)}</li>`).join('');
   $('#gallery').innerHTML = ui.galleryHTML(D.gallery, null);
   bind();

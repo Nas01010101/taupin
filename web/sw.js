@@ -4,7 +4,7 @@ const CACHE = 'taupin-v24';
 const SHELL = [
   './', 'index.html', 'app.css', 'nasa.css', 'img/hero.jpg', 'manifest.webmanifest',
   'js/i18n.js', 'js/i18n-fr.js', 'js/i18n-fr-text.js', 'js/i18n-fr-pat.js', 'js/i18n-fr-pat2.js', 'js/i18n-fr-post.js',
-  'js/app.js', 'js/scene.js', 'js/critters.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/engine.js', 'js/custom.js', 'js/history.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/organic.js', 'js/forecast.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/fieldengine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'js/soil.js', 'data/fields/index.json',
+  'js/app.js', 'js/scene.js', 'js/critters.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/engine.js', 'js/custom.js', 'js/history.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/organic.js', 'js/forecast.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/fieldengine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'js/soil.js', 'js/cropcheck.js', 'data/fields/index.json',
   'vendor/three/three.module.js', 'vendor/three/three.core.js', 'vendor/three/OrbitControls.js',
   'vendor/ort/ort.wasm.min.mjs', 'vendor/ort/ort-wasm-simd-threaded.mjs', 'vendor/ort/ort-wasm-simd-threaded.wasm',
   'data/field.json', 'data/risk.json', 'data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json',

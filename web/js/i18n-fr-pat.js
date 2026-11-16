@@ -11,6 +11,9 @@ const NUM = '(\\d[\\d.,]*)';
 const CROP = { corn: 'le maïs', soybean: 'le soya', wheat: 'le blé', buckwheat: 'le sarrasin', barley: 'l’orge', oat: 'l’avoine', canola: 'le canola' };
 
 export const PATTERNS = [
+  // Active crop field check (cropcheck.js)
+  [/^Active crop field: (\d+) % of ([\d.]+) ha under trees of 3 m or more(?:, ([\d.]+) ha open)?$/, (m) => `Champ en culture: ${m[1]} % de ${m[2]} ha sous des arbres de 3 m ou plus${m[3] ? `, ${m[3]} ha à découvert` : ''}`],
+  [/^Not an active crop field: (\d+) % of ([\d.]+) ha under trees of 3 m or more(?:, ([\d.]+) ha open)?\. Rotation results here only demonstrate the app$/, (m) => `Pas un champ en culture: ${m[1]} % de ${m[2]} ha sous des arbres de 3 m ou plus${m[3] ? `, ${m[3]} ha à découvert` : ''}. Ici, les résultats des rotations servent seulement à montrer l’application`],
   // Trap week and trap plan
   [/^(\d)\. Trap week (\d{4}): set bait traps around (.+)$/, '$1. Semaine de piégeage $2: installez les pièges-appâts vers le $3'],
   [/^(\d)\. Trap week: set bait traps around (.+)$/, '$1. Semaine de piégeage: installez les pièges-appâts vers le $2'],

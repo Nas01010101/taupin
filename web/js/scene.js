@@ -377,6 +377,8 @@ export function createScene(container, field, base = 'data/') {
     // key: one of VIEWS (terrain, twi, ndvi, lst, soil, zones).
     setLayer(key) { view = key; if (data.height) paint(); },
     get layer() { return view; },
+    // decoded lidar canopy heights in metres, after ready.
+    canopy: () => data.canopy,
     setTraps(on) { traps.visible = on; },
     onPick(cb) { pickCb = cb; },
     // cb(id): a pin added with an id was clicked. setPickMode(true): crosshair and a ring over the ground.

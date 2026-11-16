@@ -79,6 +79,7 @@ One codebase, two versions that share the NASA rules, the photo model and the 3D
   benchmarks and candidate venues.
 
 How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.md`](docs/CHALLENGE_FIT.md).
+The system shown in the demo video, scene by scene, with the code for each part: [`docs/SYSTEM.md`](docs/SYSTEM.md).
 
 ## What it does
 
