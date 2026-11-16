@@ -5,8 +5,8 @@
 
 export const DICT = {
   // Page and header
-  'Taupin: soil insects on a Quebec parcel': 'Taupin: insectes du sol sur une parcelle du Québec',
-  'Wireworm scouting for a Quebec field, before you buy coated seed': 'Dépistage des vers fil-de-fer dans un champ du Québec, avant d\'acheter des semences traitées',
+  'Taupin: your field in 3D, five-year crop rotations': 'Taupin: votre champ en 3D, rotations sur cinq ans',
+  'Any field on Earth in 3D from NASA data: compare five-year crop rotations and scout soil insects': 'Tout champ de la planète en 3D à partir des données de la NASA: comparer des rotations sur cinq ans et dépister les insectes du sol',
   'Loading the photo check…': 'Chargement de la vérification par photo…',
   'Photo check ready': 'Vérification par photo prête',
   'Photo check not installed': 'Vérification par photo non installée',

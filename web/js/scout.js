@@ -100,7 +100,7 @@ export function recordText({ date, field, window: tw, sheet, rank, photos = [], 
   return [
     'Taupin scouting record', `Written ${date}`, '',
     'Field',
-    `  ${field.site.name}: a ${side} m square at ${field.site.lat} N, ${Math.abs(field.site.lon)} W`,
+    `  ${field.site.name}: a ${side} m square at ${Math.abs(field.site.lat)} ${field.site.lat < 0 ? 'S' : 'N'}, ${Math.abs(field.site.lon)} ${field.site.lon < 0 ? 'W' : 'E'}`,
     ...(field.open ? [`  Open ground where traps can go: ${field.open.area_ha} ha`] : []), '',
     'When to trap',
     `  Soil at 0 to 10 cm holds 12 °C for a week around ${tw.mean12} (NASA POWER TSOIL1, ${tw.span[0]} to ${tw.span[1]}); ${tw.last12} in ${tw.lastYear}`,

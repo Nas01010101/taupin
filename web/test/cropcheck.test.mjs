@@ -23,3 +23,7 @@ test('the demo park square reads not active, 68 % trees', () => {
   assert.equal(s.active, false);
   assert.equal(s.treePct, 68);
 });
+
+test('treeShare is null without lidar canopy', () => {
+  assert.equal(treeShare(undefined), null);
+});

@@ -60,7 +60,7 @@ export function createScene(container, field, base = 'data/') {
       // 30 m layers: each 2 m cell takes its 30 m cell's value, so blocks stay visible.
       const val = n === N ? vals[i] : vals[Math.floor(r / k) * n + Math.floor(c / k)];
       let rgb = colorOf(lay, val) ?? [150, 146, 136];
-      if (view === 'terrain' && chm[i] >= 2) rgb = [70, 96, 58];           // shade under crowns
+      if (view === 'terrain' && chm?.[i] >= 2) rgb = [70, 96, 58];           // shade under crowns
       const s = 0.6 + 0.5 * hs[i];                 // flat ground (hs 0.71) at 0.95
       const o = i * 4;
       img.data[o] = rgb[0] * s; img.data[o + 1] = rgb[1] * s; img.data[o + 2] = rgb[2] * s; img.data[o + 3] = 255;

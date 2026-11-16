@@ -705,7 +705,7 @@ async function main() {
   sheet.genus ??= risk.zones.upland.dominant_genus;
   $('#traps').innerHTML = ui.trapsHTML(field, sheet);
   const side = field.parcel.size * field.parcel.res_m;
-  $('#site').textContent = `${field.site.name}: a ${side} m square at ${field.site.lat} N, ${Math.abs(field.site.lon)} W`
+  $('#site').textContent = `${field.site.name}: a ${side} m square at ${Math.abs(field.site.lat)} ${field.site.lat < 0 ? 'S' : 'N'}, ${Math.abs(field.site.lon)} ${field.site.lon < 0 ? 'W' : 'E'}`
     + (field.open ? `, with ${field.open.area_ha} ha of open ground where traps can go` : '');
   scene.ready.then(() => {
     const st = cropStatus(treeShare(scene.canopy()), field.parcel.area_ha, field.open?.area_ha);

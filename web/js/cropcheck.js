@@ -4,10 +4,11 @@
 export const TREE_M = 3;
 export const MAX_TREE_SHARE = 0.5;
 
-// canopy: decoded lidar canopy heights in metres, NaN for no data. Returns 0..1 or null.
+// canopy: decoded lidar canopy heights in metres, NaN for no data; absent where there is no lidar.
+// Returns 0..1 or null.
 export function treeShare(canopy) {
   let trees = 0, n = 0;
-  for (const h of canopy) {
+  for (const h of canopy ?? []) {
     if (Number.isNaN(h)) continue;
     n++;
     if (h >= TREE_M) trees++;
