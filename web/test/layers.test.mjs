@@ -90,6 +90,8 @@ test('baked Quebec fields carry every view, and crop cells are known ACI classes
     assert.equal(crop.length, FL.crop.size ** 2);
     for (const x of crop) assert.ok(Number.isNaN(x) || known.has(x), `${id} class ${x}`);
     for (const c of FL.crop.classes) assert.ok(colorOf(FL.crop, c.id), `${id} colour ${c.id}`);
-    assert.ok(f.crops.rotation && f.crops.per_year[f.crops.last_year], id);
+    // A rotation is preset only on a close match (crophist.MIN_MATCH); the best one is always named.
+    assert.ok(f.crops.rotation_best && f.crops.per_year[f.crops.last_year], id);
+    assert.ok(f.crops.rotation === null || f.crops.rotation === f.crops.rotation_best, id);
   }
 });

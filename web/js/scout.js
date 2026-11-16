@@ -91,7 +91,7 @@ export function findLine(f) {
 }
 
 // Plain text the farmer hands to the agronomist. Every line is a value shown in the app.
-export function recordText({ date, field, window: tw, sheet, rank, photos = [], own = null, finds = [] }) {
+export function recordText({ date, field, window: tw, sheet, rank, photos = [], own = null, finds = [], history = null }) {
   const r = field.trap_rules, s = liftSummary(field.traps, sheet), side = field.parcel.size * field.parcel.res_m;
   const pad = (v, n) => String(v).padEnd(n);
   const rows = field.traps.map(t => `  ${pad(t.id, 5)}${pad(t.zone, 5)}${pad(t.lat.toFixed(6), 11)}${pad(t.lon.toFixed(6), 12)}`
@@ -110,6 +110,7 @@ export function recordText({ date, field, window: tw, sheet, rank, photos = [], 
     ...rows, ...lifts,
     `  Dominant species entered: ${GENUS_LABEL[s.genus]} (threshold ${s.threshold} per trap per lift)`,
     `  ${verdict(s, r.min_traps)}`, '',
+    ...(history ? ['Crop history behind the pest levels', ...history, ''] : []),
     'Field ranking',
     rank ? `  ${rank.text} third for ${rank.year} among the ${rank.n} Quebec fields the Taupin model was fitted on. A rank, not a probability.` : '  Not available for this year.', '',
     'Photos named in the app',

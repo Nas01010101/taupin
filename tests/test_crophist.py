@@ -43,3 +43,38 @@ def test_grid_around_snaps_to_30m_and_contains_point():
     assert g.x0 % 30 == 0 and g.y_top % 30 == 0 and g.size == 300
     x, y = transform("EPSG:4326", "EPSG:32618", [-73.5504], [45.6917])
     assert g.x0 < x[0] < g.x0 + 600 and g.y_top - 600 < y[0] < g.y_top
+
+
+def test_cycle_is_the_repeating_unit_not_the_five_year_plan():
+    from taupin.crophist import cycle
+    assert cycle(["corn", "soybean", "corn", "soybean", "corn"]) == ["corn", "soybean"]
+    assert cycle(["corn", "soybean", "wheat", "corn", "soybean"]) == ["corn", "soybean", "wheat"]
+    assert cycle(["corn"] * 5) == ["corn"]
+    assert cycle(["buckwheat", "soybean", "corn", "soybean", "wheat"]) == ["buckwheat", "soybean", "corn", "soybean", "wheat"]
+
+
+def test_corn_soy_does_not_match_corn_after_corn():
+    # Read end to end, corn-soy-corn-soy-corn wraps into corn-corn and would fit this history 4 of 5.
+    s = summary(_hist(["corn", "corn", "soybean", "corn", "corn"]))
+    assert s["rotation"] == "A_continuous_corn" and s["rotation_match"] == "4 of 5"
+    assert s["rotation_ties"] == ["G_corn_corn_soy_wheat"]   # also 4 of 5; corn every year agrees on 2024 and 2025
+
+
+def test_tie_goes_to_the_rotation_agreeing_on_recent_years_not_list_order():
+    # G (corn, corn, soybean, wheat) and A (corn every year) both agree 3 of 4 here; the last year is
+    # wheat, which G has and A does not.
+    s = summary(_hist(["corn", "corn", "corn", "wheat"]))
+    assert s["rotation"] == "G_corn_corn_soy_wheat" and "A_continuous_corn" in s["rotation_ties"]
+
+
+def test_weak_match_is_not_preset():
+    s = summary(_hist(["forage", "soybean", "soybean", "forage", "soybean"]))
+    assert s["rotation"] is None and s["rotation_best"] and s["rotation_match"] == "2 of 5"
+    assert s["forage_years_last5"] == 2
+
+
+def test_small_grains_are_grouped_as_grass_hosts():
+    from taupin.crophist import GROUPS
+    from taupin.engine import GRASS
+    assert GROUPS[136] == "oat" and GROUPS[137] == "rye" and GROUPS[133] == "barley"
+    assert {"oat", "rye", "barley"} <= GRASS

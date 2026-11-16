@@ -221,6 +221,12 @@ details.more summary { cursor: pointer; padding: var(--s1) 0; }
 .chk { font-size: var(--t-s); display: inline-flex; gap: var(--s1); align-items: center; }
 .sw-sel { display: flex; flex-wrap: wrap; gap: var(--s4); margin-bottom: var(--s4); font-size: var(--t-s); }
 .sw-sel select { margin-left: var(--s1); font: inherit; }
+.build { margin: 0 0 var(--s4); padding: var(--s3); border: 1px solid currentColor; border-radius: 6px; }
+.build summary { cursor: pointer; font-weight: 600; }
+.build-row { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: end; margin: var(--s2) 0; font-size: var(--t-s); }
+.build-row label { display: grid; gap: 2px; }
+.build-row select, .build-row input { font: inherit; min-height: 2.25rem; }
+.build-list { margin: var(--s2) 0 0; padding-left: 1.1rem; font-size: var(--t-s); }
 table.sw { border-collapse: collapse; font-size: var(--t-s); width: 100%; margin-bottom: var(--s4); }
 table.sw th, table.sw td { text-align: left; vertical-align: top; padding: var(--s1) var(--s2); border-bottom: 1px solid var(--surface2); }
 table.sw thead th { font-weight: 600; font-size: var(--t-xs); color: var(--muted); }
@@ -249,3 +255,10 @@ details.how summary { cursor: pointer; color: var(--accent); margin-bottom: var(
 /* Trap calendar (trapPlanHTML): numbered steps from "have traps ready" to "the count decides next year's seed". */
 .plan { margin: 12px 0 16px; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45; }
 .plan li::marker { font-weight: 700; }
+
+.hist { margin: var(--s2) 0 var(--s3); font-size: var(--t-s); }
+.hist summary { cursor: pointer; font-weight: 600; }
+.hist-row { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: end; margin: var(--s2) 0; }
+.hist-year { display: grid; gap: 2px; }
+.hist-year select, .hist-row input { font: inherit; min-height: 2.25rem; }
+.hist-year small { opacity: .75; }
