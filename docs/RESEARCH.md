@@ -54,6 +54,13 @@ removed 157 of 648; `data/ood_audit.csv`).
 
 - Trap date: end of the first 7-day window after 1 March with mean `TSOIL1` at or above 12 °C
   (`src/taupin/soil.py`, mirrored in `web/js/power.js` `crossing`).
+- Forecasts for the next five seasons (`web/js/forecast.js`): four models (mean of all years, mean
+  of the last 10, least-squares trend, average of mean and trend) scored by a rolling-origin
+  backtest (fit on the years up to t, predict t + 1 to t + 5, first origin after 10 years); the
+  lowest mean absolute miss is used, and the 80 % range is the 10th to 90th percentile of its own
+  misses at each horizon. Demo field: the mean wins for the trap date (6.9 days against 8.4 for the
+  trend); 2026 forecast 14 May, range 6 to 24 May. Checked out of sample, with each range built
+  only from misses already seen, it held the next date in 61 of 70 cases (87 %).
 - Field ranking: L2 logistic regression on light soil, years in forage, spring root-zone wetness
   and winter minimum soil temperature (`risk/fit.py`). Validation: leave one field out, one year
   out, one region out, one POWER cell out; bootstrap 95 % CI; permutation test. Output reported as
@@ -103,7 +110,7 @@ Photo model (`model/metrics.json`, version `v2-dinov2s`, threshold 0.892):
 
 | Experiment | Data | Protocol | What to check first |
 |---|---|---|---|
-| E1. Taupin model on a field-image pest set | CerealPestAID (Hugging Face `sheneman/CerealPestAID-dataset`; code at https://github.com/sheneman/CerealPestAID) | fine-tune and evaluate on their train/val/test split; report accuracy, macro-F1, coverage at a validation-fixed threshold | to check on the dataset card: licence (the GitHub repo and model card say MIT; dataset card licence not read), total image count (task brief says 47,136, not verified), 26 classes (verified by search), "Clickbeetles / wireworms" image count (task brief says 2,055, not verified). Their reported test accuracy on 2,381 images, by search result only: EfficientNet-B6 92.94 %, MobileNetV3-Large 90.09 %, InceptionV3 79.00 % |
+| E1. Taupin model on a field-image pest set | CerealPestAID (Hugging Face `sheneman/CerealPestAID-dataset`; code at https://github.com/sheneman/CerealPestAID) | fine-tune and evaluate on their train/val/test split; report accuracy, macro-F1, coverage at a validation-fixed threshold | to check on the dataset card: licence (the GitHub repo and model card say MIT; dataset card licence not read), total image count (one secondary source says 47,136, not verified), 26 classes (verified by search), "Clickbeetles / wireworms" image count (one secondary source says 2,055, not verified). Their reported test accuracy on 2,381 images, by search result only: EfficientNet-B6 92.94 %, MobileNetV3-Large 90.09 %, InceptionV3 79.00 % |
 | E2. Standard IP102 split | IP102 | standard train/val/test split, top-1 accuracy | reference: CT-PestNet 77.32 % (PLoS ONE 21(8), 2026, doi 10.1371/journal.pone.0356061; number seen in the abstract via search, split not confirmed). Treat 90 % and higher claims as non-standard protocols until their tables are read |
 | E3. Backbone swap | same splits as `model/metrics.json` | DINOv2-S (current) against BioCLIP 2 (MIT, arXiv 2505.23883), BioCLIP 2.5, DINOv3 (Meta DINOv3 License, check terms before release) | BioCLIP 2.5 training-set size unresolved (233M images per the Imageomics models page; to check) |
 | E4. More data for the rare classes | TreeOfLife-200M (about 214M images, 952,257 taxa; licence per image, to check), BIOSCAN-5M (licence to check; CC BY 3.0 not confirmed), iNaturalist and GBIF Elateridae and *Diabrotica* | add wireworm and click beetle images, keep the sealed test untouched, report the same table | per-image licences; no overlap with the sealed test |
@@ -124,5 +131,5 @@ Searched 2026-11-15. Most 2027 pages were not found yet.
 | CVPR 2027 | main conference 22 to 25 June 2027; workshops 20 to 21 June 2027 | Seattle | main papers 16 Nov 2026 23:59 AoE (registration closed 10 Nov); workshop proposals closed 4 Nov 2026 | https://cvpr.thecvf.com/Conferences/2027/Dates , https://cvpr.thecvf.com/Conferences/2027/CallForPapers |
 | CVPR 2027 workshops: CV4Animals, Agriculture-Vision, FGVC | not announced | Seattle | not found | check the CVPR 2027 workshop list in early 2027 |
 
-The venue rows were read from search results; the official pages could not all be opened from this
-session. Check each one before planning a submission.
+The venue rows were read from search results, not all from the official pages. Check each one
+before planning a submission.

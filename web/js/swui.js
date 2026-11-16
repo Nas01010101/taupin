@@ -2,10 +2,10 @@
 // (why, evidence, benefits against the current rotation, information gaps, risks). Pure functions
 // of the computed metrics; every file-derived string goes through esc().
 import { esc } from './ui.js';
-import { PRIORITIES, versus, gaps } from './soilwater.js';
+import { PRIORITIES, versus, gaps, conflicts } from './soilwater.js';
 
 export const TILLAGE = { fall_plow: 'Fall plough', spring_plow: 'Spring plough', mulch: 'Mulch tillage', no_till: 'No-till' };
-const CROP = { corn: 'Corn', soybean: 'Soybean', wheat: 'Wheat', buckwheat: 'Buckwheat' };
+const CROP = { corn: 'Corn', soybean: 'Soybean', wheat: 'Wheat', barley: 'Barley', oat: 'Oats', canola: 'Canola', buckwheat: 'Buckwheat' };
 const day = doy => new Date(Date.UTC(2025, 0, doy)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 export function controlsHTML({ names, current, chosen, tillage }) {
@@ -54,7 +54,7 @@ export function tableHTML(ranked, byId, names, current, impact = null) {
 const li = xs => xs.map(x => `<li>${esc(x)}</li>`).join('');
 
 // One card per rotation, in rank order.
-export function cardsHTML(ranked, byId, { names, texts, current, cropData, sequences, chosen }) {
+export function cardsHTML(ranked, byId, { names, texts, current, cropData, sequences, chosen, prior = [] }) {
   const cur = byId[current];
   return ranked.map(r => {
     const m = byId[r.id], t = texts[r.id] ?? {}, isCur = r.id === current;
@@ -73,7 +73,7 @@ export function cardsHTML(ranked, byId, { names, texts, current, cropData, seque
 ${isCur ? '<p class="muted">The rotation the others are compared with.</p>'
     : `${good.length ? `<ul class="good">${li(good)}</ul>` : ''}${bad.length ? `<ul class="bad">${li(bad)}</ul>` : ''}${vs.length ? '' : '<p class="muted">No difference on the computed columns.</p>'}`}
 <h4>Information gaps</h4><ul>${li(gapList)}</ul>
-<h4>Risks</h4><ul>${li(t.risks ?? [])}</ul>
+<h4>Risks</h4><ul>${li([...conflicts(sequences[r.id], cropData, prior), ...(t.risks ?? [])])}</ul>
 </article>`;
   }).join('');
 }
@@ -119,4 +119,24 @@ export function smapHTML(smap, weather) {
 <p class="small">Monthly means, ${c.months} months from April 2015. The month-to-month departures from the usual of the two datasets correlate at r = ${c.anomaly_r.toFixed(2)},
 so the POWER wetness input of the field ranking follows the satellite-constrained SMAP analysis. Driest months in SMAP: ${esc(dry)}.
 ${annual ? `GPM IMERG rain at this point averages ${Math.round(annual).toLocaleString('en-US')} mm a year (${full.length} years).` : ''}</p>`;
+}
+
+// "Build your own rotation": one crop per year, a name, and the rotations already built. `draft` is
+// the five crops shown in the pickers; `presets` maps preset ids to their names and sequences.
+export function builderHTML({ startYear, crops, draft, customs, presets, max, status = '' }) {
+  const full = customs.length >= max;
+  const pick = (i) => `<label class="build-year">${startYear + i}<select data-build-year="${i}">${crops.map(c =>
+    `<option value="${esc(c.id)}"${c.id === draft[i] ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>`;
+  const from = Object.entries(presets).map(([id, p]) => `<option value="${esc(id)}">${esc(p.name)}</option>`).join('');
+  // One element per crop name, so the language layer translates each name on its own.
+  const list = customs.map(r => `<li><b>${esc(r.name)}</b>: ${r.crops.map(c => `<span>${esc(crops.find(x => x.id === c)?.name ?? c)}</span>`).join(', ')}
+    <button type="button" class="ghost" data-build-remove="${esc(r.id)}" aria-label="Remove ${esc(r.name)}">Remove</button></li>`).join('');
+  return `<details class="build"${customs.length && !status ? '' : ' open'}><summary>Build your own rotation</summary>
+<p class="small">Pick a crop for each year. Your rotation joins the table and the cards below, scored by the same pest rules and the same soil and water data. It is kept in this browser only. Crops appear here once they have sourced soil and water values.</p>
+<div class="build-row"><label>Start from <select data-build-from><option value="">-</option>${from}</select></label></div>
+<div class="build-row">${Array.from({ length: draft.length }, (_, i) => pick(i)).join('')}</div>
+<div class="build-row"><label>Name <input id="build-name" maxlength="40" placeholder="My rotation"></label>
+<button type="button" data-build-add${full ? ' disabled' : ''}>Add to the comparison</button></div>
+<p class="small" role="status" id="build-status">${esc(status || (full ? `Up to ${max} of your own rotations: remove one to add another.` : ''))}</p>
+${customs.length ? `<ul class="build-list">${list}</ul>` : ''}</details>`;
 }

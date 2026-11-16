@@ -43,8 +43,23 @@ export function backtest(xs, ys, { H = 5, minTrain = 10 } = {}) {
 
 const mae = rs => mean(rs.flat().map(Math.abs));
 
+// The range is built from the same backtest misses that picked the model, so its 80 % is not a
+// held-out figure. This checks it on misses it was not built from: walking forward through one
+// horizon's misses (in origin order), each one is tested against the range made from the misses
+// before it alone, once at least `minPrior` are there. {inside, n}.
+export function rangeCheck(misses, q = [0.1, 0.9], minPrior = 5) {
+  let inside = 0, n = 0;
+  for (let i = minPrior; i < misses.length; i++) {
+    const prior = misses.slice(0, i), lo = quantile(prior, q[0]), hi = quantile(prior, q[1]);
+    n++;
+    if (misses[i] >= lo && misses[i] <= hi) inside++;
+  }
+  return { inside, n };
+}
+
 // Forecast `targets` (years after the last one in xs). Returns the chosen model, every model's
-// backtest error, and per target {year, value, lo, hi, n} with lo..hi the 80 % range.
+// backtest error, per target {year, value, lo, hi, n} with lo..hi the 80 % range, and `check`:
+// how often that range held on misses it was not built from (rangeCheck), summed over horizons.
 export function forecast(xs, ys, targets, { minTrain = 10, q = [0.1, 0.9] } = {}) {
   const last = xs[xs.length - 1], H = Math.max(...targets.map(y => y - last));
   if (H < 1 || xs.length < minTrain + 3) return null;
@@ -56,5 +71,7 @@ export function forecast(xs, ys, targets, { minTrain = 10, q = [0.1, 0.9] } = {}
     const rs = bt[best][year - last - 1], v = f(year);
     return { year, value: v, lo: v + quantile(rs, q[0]), hi: v + quantile(rs, q[1]), n: rs.length, misses: rs };
   });
-  return { model: best, label: MODELS[best].label, errors, rows, span: [xs[0], last] };
+  const checks = bt[best].map(rs => rangeCheck(rs, q));
+  const check = { inside: checks.reduce((s, c) => s + c.inside, 0), n: checks.reduce((s, c) => s + c.n, 0), byHorizon: checks };
+  return { model: best, label: MODELS[best].label, errors, rows, check, span: [xs[0], last] };
 }

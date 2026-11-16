@@ -141,12 +141,20 @@ const sum = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) : null);
 
 // One rotation, year by year, plus five-year totals. `pests` is the rotation's row from
 // riskView(); tillage is a key of crops.json `tillage`.
-export function rotationMetrics(cropIds, clim, cropData, pests, tillage = 'fall_plow') {
+// `prior` is the farmer's crop history, oldest first; its last crop is the year before year 1.
+export function rotationMetrics(cropIds, clim, cropData, pests, tillage = 'fall_plow', prior = []) {
   const tf = cropData.tillage[tillage];
+  // A crop right after itself loses the sourced yield (corn: Gagnon et al. 2019), and residue with it.
+  const yieldOf = (id, prevId) => {
+    const c = cropData.crops[id];
+    if (c.yield_kg_ha == null) return null;
+    return prevId === id && c.after_same_penalty_kg_ha ? c.yield_kg_ha - c.after_same_penalty_kg_ha : c.yield_kg_ha;
+  };
   const years = cropIds.map((id, i) => {
     const c = cropData.crops[id], cl = clim.byYear?.[i]?.[id] ?? clim.crops[id], prev = i ? cropData.crops[cropIds[i - 1]] : null;
     const credit = prev ? prev.n_credit_next : 0;
     const p = pests?.years[i];
+    const yld = yieldOf(id, i ? cropIds[i - 1] : prior[prior.length - 1]);
     return {
       crop: id,
       deficit: cl?.deficit ?? null, deficitDry: cl?.deficitDry ?? null, need: cl?.need ?? null,
@@ -154,7 +162,8 @@ export function rotationMetrics(cropIds, clim, cropData, pests, tillage = 'fall_
       c: c.usle_crop == null ? null : c.usle_crop * tf,
       n: c.n_need == null || credit == null ? null : Math.max(0, mid(c.n_need) - credit),
       credit,
-      residue: c.yield_kg_ha == null || c.residue_ratio == null ? null : c.yield_kg_ha * c.residue_ratio / 1000,
+      yield: yld,
+      residue: yld == null || c.residue_ratio == null ? null : yld * c.residue_ratio / 1000,
       pest: p ? LV[p.wireworm] + LV[p.crw] : null,
       wireworm: p?.wireworm ?? null, crw: p?.crw ?? null,
     };
@@ -237,9 +246,23 @@ export function gaps(cropIds, cropData) {
     for (const [k, label] of [['kc', 'water use (Kc)'], ['stages', 'season length'], ['n_need', 'nitrogen need'], ['n_credit_next', 'nitrogen left for the next crop'], ['yield_kg_ha', 'Quebec yield'], ['residue_ratio', 'residue ratio']]) {
       if (c[k] == null) out.add(`${c.name}: no sourced ${label}`);
     }
-    for (const k of ['kc_note', 'plant_note', 'usle_note']) if (c[k] && /assum/i.test(c[k])) out.add(`${c.name}: ${c[k]}`);
+    for (const k of ['kc_note', 'plant_note', 'usle_note', 'n_note', 'ratio_note']) if (c[k] && /assum/i.test(c[k])) out.add(`${c.name}: ${c[k]}`);
   }
   return [...out];
+}
+
+// Sourced pairs of crops that should not follow each other (crops.json `rotation_conflicts`), for the
+// risks of a card. `prior`: the crops before the plan, so the farmer's last history year counts too.
+export function conflicts(cropIds, cropData, prior = []) {
+  const name = id => cropData.crops[id]?.name ?? id, seq = [...prior.slice(-1), ...cropIds], out = [];
+  for (const r of cropData.rotation_conflicts ?? []) {
+    for (let i = 1; i < seq.length; i++) {
+      if (seq[i - 1] !== r.after || !r.crops.includes(seq[i])) continue;
+      const text = `${name(seq[i])} right after ${name(r.after).toLowerCase()}: ${r.why} [${r.cite ?? cropData.sources[r.src] ?? r.src}]`;
+      if (!out.includes(text)) out.push(text);
+    }
+  }
+  return out;
 }
 
 export function doyDate(doy, year = 2025) { return iso(new Date(Date.UTC(year, 0, doy))); }

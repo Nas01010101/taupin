@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VIEWS, decode, colorOf } from './layers.js';
+import { crittersFor, critterPose } from './critters.js';
 
 // Relief is drawn 2 times (12 m over 600 m would read flat); trees are drawn at their lidar height.
 const TEX = 1200, EXAG = 2, PROFILE_DEPTH = 24;
@@ -206,7 +207,68 @@ export function createScene(container, field, base = 'data/') {
     g.position.y = g.userData.base.y + (1 - e) * 400;
     g.visible = k > 0;
   }
-  function clearPins() { pins.clear(); }
+  function clearPins() { pins.clear(); critters.clear(); }
+
+  // ------------------------------------------------------------ critters
+  // Animals that crawl around a pest photo's pin (critters.js). Drawn oversized, like the pins: at
+  // true size a 2 cm wireworm is far below one pixel of a 300 m field.
+  const critters = new THREE.Group(); scene.add(critters);
+  const SEG = 7, SEG_LAG = 0.5, ROAM = 40;   // lag (s) spaces the segments about one body width apart
+  function critterMesh(look) {
+    const m = new THREE.MeshLambertMaterial({ color: look.color });
+    const g = new THREE.Group();
+    if (look.shape === 'beetle') {
+      const body = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), m); body.scale.set(5, 2.2, 3); body.position.y = 2.2;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(1.8, 10, 8), m); head.position.set(5.6, 2, 0);
+      g.add(body, head);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x241810 });
+      for (const side of [-1, 1]) for (const k of [-2.5, 0, 2.5]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 5, 4), legMat);
+        leg.rotation.x = side * 1.1; leg.position.set(k, 1.2, side * 3.2); leg.userData.leg = side; g.add(leg);
+      }
+    } else {
+      // One sphere per segment; each follows the head along its path with a delay.
+      const r0 = look.shape === 'grub' ? 4.4 : 3.2;
+      for (let j = 0; j < SEG; j++) {
+        const seg = new THREE.Mesh(new THREE.SphereGeometry(r0 * (1 - j * 0.07), 10, 8), m);
+        seg.userData.seg = j; g.add(seg);
+      }
+    }
+    if (look.shape === 'beetle') g.scale.setScalar(1.8);
+    g.userData.look = look;
+    return g;
+  }
+  // id: the photo model class id. Returns null for classes that get no animals.
+  function addCritters({ row, col, id, n = 6 }) {
+    const look = crittersFor(id);
+    if (!look) return null;
+    const g = new THREE.Group();
+    for (let i = 0; i < n; i++) g.add(critterMesh(look));
+    g.userData = { row, col, n };
+    critters.add(g);
+    return g;
+  }
+  const groundY = (x, z) => heightAt((z / W + 0.5) * (N - 1), (x / W + 0.5) * (N - 1));
+  function moveCritters(t) {
+    for (const g of critters.children) {
+      const c = toWorld(g.userData.row, g.userData.col);
+      g.children.forEach((a, i) => {
+        if (a.userData.look.shape === 'beetle') {
+          const p = critterPose(i, g.userData.n, t, { r: ROAM });
+          const x = c.x + p.dx, z = c.z + p.dz;
+          a.position.set(x, groundY(x, z), z); a.rotation.y = -p.heading;
+          for (const leg of a.children) if (leg.userData.leg) leg.rotation.z = 0.5 * Math.sin(t * 14 + leg.position.x);
+        } else {
+          a.position.set(0, 0, 0); a.rotation.y = 0;
+          for (const seg of a.children) {
+            const p = critterPose(i, g.userData.n, t * 0.6, { r: ROAM, lag: seg.userData.seg * SEG_LAG });
+            const x = c.x + p.dx, z = c.z + p.dz;
+            seg.position.set(x, groundY(x, z) + 2.6 + 0.8 * Math.sin(t * 6 - seg.userData.seg), z);
+          }
+        }
+      });
+    }
+  }
 
   // Pointer -> the cell under it, and the selectable pin under it when that pin is in front of the
   // ground. A click on a pin selects it; a click on the ground gives (row, col).
@@ -301,13 +363,14 @@ export function createScene(container, field, base = 'data/') {
   renderer.setAnimationLoop(() => {
     if (!looping) return;
     if (orbitAngle === null) controls.update();
+    if (critters.children.length) moveCritters(performance.now() / 1000);
     renderer.render(scene, camera);
   });
   resize();
 
   const cellOk = (row, col) => Math.max(0, Math.min(N - 1, row)) * N + Math.max(0, Math.min(N - 1, col));
   return {
-    ready, addPin, setDrop, clearPins, setOrbit,
+    ready, addPin, addCritters, setDrop, clearPins, setOrbit,
     setPocket(on) { showPocket = on; if (data.height) paint(); },
     // marks: [{ row, col, rgb, radius }] in grid cells, from the field notes.
     setMarks(list) { marks = list; if (data.height) paint(); },

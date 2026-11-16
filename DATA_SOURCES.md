@@ -88,6 +88,9 @@ on one 300 x 300 grid of 2 m cells (UTM 18N, `src/taupin/grid.py`). Accessed 202
 | Soil map units | IRDA, cartes pédologiques numériques, sheets 31H12-101, -102, -201, -202 (study 41, 1:20 000) | Free download from IRDA; licence terms not checked | Polygons (1:20 000) | Soil layer, scouting zones |
 | Soil series attributes (Terrebonne, Terres noires humique, Alluvions récentes) | AAFC CanSIS National Soil Database, soil name and layer tables, Quebec v2r20130705 | Open Government Licence - Canada | One record per series | Soil legend: drainage class, surface layer clay and organic carbon |
 | Dorval series | Lajoie P. and Baril R., soil survey of Île de Montréal, Île Jésus and Île Bizard (CanSIS report PQ41), "Série Dorval": clay loam on calcareous till, drainage fairly good | Government of Canada publication | Series description | Soil legend (Dorval is not in the CanSIS Quebec tables) |
+| Organic matter | Computed per soil component from the CanSIS surface-layer organic carbon (ORGCARB) x 1.724 (van Bemmelen; Nelson and Sommers 1996), `src/taupin/organic.py` | as above | One value per soil map unit, on the 2 m grid | `om` layer, RAP wireworm factor (organic matter over 10 %) |
+| Soil organic carbon (second estimate) | ISRIC SoilGrids 2.0, `soc`, 0-5, 5-15 and 15-30 cm, mean and 5 % / 95 % quantiles, queried live by `web/js/organic.js` | CC BY 4.0 | 250 m | Organic matter for fields with no soil-survey value, cross-check for baked fields |
+| Crop history | AAFC Annual Crop Inventory 2009 to 2025 (`src/taupin/fetch_layers.py`). AAFC classifies it from ESA Sentinel-2 and Landsat 8/9 optical images plus CSA radar: RADARSAT-2 until 2020, RADARSAT Constellation Mission 30 m compact-pol from the 2021 map on (AAFC ACI data product specification, ISO 19131) | Open Government Licence - Canada | 30 m | Previous crops and forage years that preset the rotation plans |
 | Bait-trap rules | MAPAQ, RAP Grandes cultures, Méthode standard de dépistage des vers fil-de-fer, 16 April 2025, Agri-Réseau doc. 115269, p. 2-3 | Cited, not redistributed | Per field | 10 traps minimum, about 25 m apart, lettered A to J, GPS in decimal degrees |
 
 The park outline is OpenStreetMap way 542903996 (ODbL, © OpenStreetMap contributors), read through
@@ -102,3 +105,13 @@ Taupin choices with no source: canopy at or above 2 m counts as tree; trappable 
 the parcel edge; 4 zones (k-means with a fixed seed); traps split between zones in proportion to
 area, at least one per zone. The RAP protocol gives no number per hectare, no edge distance and
 no rule for splitting traps between zones.
+
+Other baked fields (`web/data/fields/`) use the same sources and steps; each `field.json` lists
+its own HRDEM project, dates and sources.
+
+## Photo model
+
+Weights: Meta DINOv2 ViT-S/14 (`timm/vit_small_patch14_dinov2.lvd142m`), Apache-2.0, fine-tuned
+on 8 classes (`web/model/MODEL_CARD.md`). Training and gallery images: iNaturalist and GBIF
+photos under CC0, CC BY or public domain; author, licence and source for each image are in
+`data/attribution.csv`.

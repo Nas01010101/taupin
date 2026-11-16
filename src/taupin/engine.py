@@ -14,7 +14,7 @@ SRC = {
     "QC_2025": "Code de gestion des pesticides, D. 470-2025: certificate + prescription for class 3A seed from 1 Aug 2025",
 }
 
-GRASS = {"corn", "wheat", "barley", "oat", "sod"}  # Poaceae: hosts that sustain wireworm populations
+GRASS = {"corn", "wheat", "barley", "oat", "rye", "sod"}  # Poaceae: hosts that sustain wireworm populations
 # Crops whose insecticide-coated (class 3A) seed needs a prescription since 1 Aug 2025 (QC_2025).
 PRESCRIPTION_CROPS = {"corn", "soybean", "wheat", "barley", "oat", "canola"}
 # Economic thresholds, larvae per trap per count (RAP).
@@ -84,7 +84,12 @@ def crw_level(crop, history):
     return level, [f"CRW: {run} prior corn year(s) -> {level} [{SRC['MAPAQ_CRW']}]"]
 
 
-def plan_rotation(crops, fld, start_year=2026, years_since_sod=1, prior=("sod", "sod", "sod"), traps=None):
+# What the field was before the plan starts: three sod years (the demo square is a regrown meadow).
+DEFAULT_PRIOR = ("sod", "sod", "sod")
+DEFAULT_YEARS_SINCE_SOD = 1
+
+
+def plan_rotation(crops, fld, start_year=2026, years_since_sod=DEFAULT_YEARS_SINCE_SOD, prior=DEFAULT_PRIOR, traps=None):
     """Score each year of a rotation. `traps` maps year -> observed mean larvae/trap (optional)."""
     traps = traps or {}
     history, out = list(prior), []

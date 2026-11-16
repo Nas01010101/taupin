@@ -3,7 +3,8 @@
 Each year's crop is the most common ACI class over the field's open cells. Two model inputs come
 out of it: grass and forage years (wireworm habitat) and the run of corn years at the end of the
 history (rootworm). The rotation the field has been following is the engine rotation whose
-pattern, at any starting year, agrees with the most of the last five years.
+pattern, at any starting year, agrees with the most of the last five years; ties go to the
+rotation that agrees on the more recent years, and a match under MIN_MATCH is not preset.
 """
 from __future__ import annotations
 
@@ -11,9 +12,13 @@ import numpy as np
 
 from .engine import ROTATIONS
 
-# ACI codes (AAFC class table) -> the crops the engine models, plus grass/forage.
+# ACI codes (AAFC class table) -> the crops the engine models, plus grass/forage. Barley, oats and
+# rye are small-grain grasses: the engine counts them as wireworm hosts (engine.GRASS).
 GROUPS = {147: "corn", 158: "soybean", 140: "wheat", 145: "wheat", 146: "wheat", 195: "buckwheat",
-          110: "forage", 122: "forage", 192: "forage"}
+          133: "barley", 136: "oat", 137: "rye", 110: "forage", 122: "forage", 192: "forage"}
+# A rotation is preset only when it agrees with all but one of the last five years (Taupin choice):
+# hay or pasture is in no listed rotation, so a field with two hay years cannot reach it.
+MIN_MATCH = 4
 CROPLAND = set(GROUPS) | {120, 121, 131, 133, 136, 153, 162, 167, 175, 177}
 
 
@@ -34,6 +39,16 @@ def per_year(aci: np.ndarray, years: list[int], mask30: np.ndarray, names: dict)
     return out
 
 
+def cycle(plan: list) -> list:
+    """The repeating unit of a five-year plan: corn, soybean, corn, soybean, corn repeats
+    [corn, soybean], not the five years end to end, which would put corn after corn at the wrap.
+    A plan with no shorter repeat (buckwheat first) is taken as five years that repeat."""
+    for p in range(1, len(plan) + 1):
+        if all(plan[i] == plan[i % p] for i in range(len(plan))):
+            return list(plan[:p])
+    return list(plan)
+
+
 def summary(hist: dict) -> dict:
     ys = sorted(hist)
     groups = [hist[y]["group"] for y in ys]
@@ -43,12 +58,21 @@ def summary(hist: dict) -> dict:
         if g != "corn":
             break
         corn_run += 1
-    best, score = None, -1
+    # Each rotation at its best starting year. The key compares the number of agreeing years first,
+    # then agreement in the latest year, the one before, and so on: recent years say more about
+    # what the field is doing now. Rotations are compared the same way, so the order of
+    # engine.ROTATIONS no longer decides a tie.
+    def key(agree):
+        return (sum(agree), tuple(reversed(agree)))
+    fits = {}
     for k, rot in ROTATIONS.items():
-        for s in range(len(rot)):
-            cyc = [rot[(s + i) % len(rot)] for i in range(len(last5))]
-            m = sum(a == b for a, b in zip(cyc, last5))
-            if m > score:
-                best, score = k, m
+        cyc = cycle(rot)
+        fits[k] = max((key([cyc[(s + i) % len(cyc)] == g for i, g in enumerate(last5)])
+                       for s in range(len(cyc))), default=(0, ()))
+    best = max(fits, key=lambda k: fits[k]) if fits else None
+    score = fits[best][0] if best else 0
+    ties = [k for k in fits if k != best and fits[k][0] == score]
+    preset = best if last5 and score >= min(MIN_MATCH, len(last5) - 1) else None
     return {"forage_years_last5": last5.count("forage"), "corn_run": corn_run,
-            "rotation": best, "rotation_match": f"{score} of {len(last5)}", "last_year": ys[-1] if ys else None}
+            "rotation": preset, "rotation_best": best, "rotation_ties": ties,
+            "rotation_match": f"{score} of {len(last5)}", "last_year": ys[-1] if ys else None}

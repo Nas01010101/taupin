@@ -1,26 +1,40 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { riskMatrix, planRotation, PARK_ZONES } from '../js/engine.js';
+import { makeRules, planRotation, pyFloat, scenariosFor } from '../js/engine.js';
 
-const J = p => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
-const risk = J('../data/risk.json');
+const json = p => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
+const risk = json('../data/risk.json'), fx = json('./fixtures/engine_parity.json');
+const R = makeRules(risk);
 
-test('with the park defaults the browser engine reproduces risk.json exactly, trace text included', () => {
-  assert.deepEqual(riskMatrix({ rotations: risk.rotations, sources: risk.sources, startYear: risk.start_year }), risk);
+test('python float formatting', () => {
+  assert.equal(pyFloat(3), '3.0');
+  assert.equal(pyFloat(4.25), '4.25');
+  assert.equal(pyFloat(0), '0.0');
 });
 
-test('a corn-corn history with a threshold trap count matches engine.py line for line', () => {
-  // web/test/fixtures/engine_history_ref.json: engine.plan_rotation(..., years_since_sod=16,
-  // prior=[soybean, wheat, soybean, corn, corn], traps={2026: 3.0}) for every rotation.
-  const ref = J('./fixtures/engine_history_ref.json');
-  for (const [k, crops] of Object.entries(risk.rotations))
-    assert.deepEqual(planRotation(crops, PARK_ZONES.upland.field, { yearsSinceSod: 16, prior: ['soybean', 'wheat', 'soybean', 'corn', 'corn'], traps: { 2026: 3 } }, risk.sources), ref[k], k);
+test('the port reproduces every preset rotation of risk.json, both zones and both scenarios', () => {
+  for (const zone of Object.keys(risk.zones)) {
+    for (const [id, crops] of Object.entries(risk.rotations)) {
+      const got = scenariosFor(risk, R, zone, crops);
+      for (const scen of ['baseline', 'trap_threshold']) assert.deepEqual(got[scen], risk.zones[zone].scenarios[scen][id], `${zone} ${id} ${scen}`);
+    }
+  }
 });
 
-test('history changes the table: third corn year is rootworm HIGH; sod gone 16 years drops the grass factor', () => {
-  const m = riskMatrix({ rotations: risk.rotations, sources: risk.sources, history: { prior: ['soybean', 'corn', 'corn'], years_since_sod: 16 } });
-  const y = m.zones.upland.scenarios.baseline.A_continuous_corn[0];
-  assert.equal(y.corn_rootworm, 'HIGH'); assert.equal(y.wireworm, 'LOW');
-  assert.ok(m.history && !risk.history);
+test('the port matches the engine on every 5-year sequence of the crops with data', () => {
+  const compact = rows => rows.map(r => `${r.wireworm[0]}/${r.corn_rootworm[0]}/${r.prescription_supportable ? 1 : 0}`).join(' ');
+  assert.equal(fx.exhaustive.length, 2 * 4 ** 5);
+  for (const c of fx.exhaustive) {
+    assert.equal(compact(planRotation(R, c.crops, risk.zones[c.zone].field, { startYear: fx.start_year })), c.levels, `${c.zone} ${c.crops}`);
+  }
+});
+
+test('the port matches the engine, traces included, on seeded soils, histories and trap means', () => {
+  assert.equal(fx.random.length, 80);
+  for (const c of fx.random) {
+    const traps = Object.fromEntries(Object.entries(c.traps).map(([y, v]) => [Number(y), v]));
+    const got = planRotation(R, c.crops, c.field, { startYear: fx.start_year, yearsSinceSod: c.years_since_sod, prior: c.prior, traps });
+    assert.deepEqual(got, c.expected, JSON.stringify(c.crops));
+  }
 });

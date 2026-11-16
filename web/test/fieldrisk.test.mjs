@@ -46,3 +46,37 @@ test('the ranking text never states a probability and shows the validation numbe
   assert.match(html, /Brier score 0\.110 against 0\.116/);
   assert.doesNotMatch(html, /\d %<\/td>|probability of/i);
 });
+
+import { soilLightCheck, soilLightNote, LIGHT_MAX_CLAY } from '../js/fieldrisk.js';
+const fieldOf = p => JSON.parse(readFileSync(new URL(`../data/${p}`, import.meta.url), 'utf8'));
+
+test('soil map answers "sand or sandy loam" where every unit has 20 % clay or more, or is organic', () => {
+  for (const p of ['field.json', 'fields/laval/field.json', 'fields/mirabel/field.json']) {
+    const c = soilLightCheck(fieldOf(p));
+    assert.equal(c.light, 0, p);
+    assert.match(soilLightNote(c), /None can be sand or sandy loam .* so that input is no\./);
+  }
+  const park = soilLightNote(soilLightCheck(fieldOf('field.json')));
+  assert.match(park, /Dorval \(clay loam\)/); assert.match(park, /Terres Noires, Humique \(organic\)/);
+});
+
+test('soil map with units under 20 % clay asks the farmer and names those units', () => {
+  const c = soilLightCheck(fieldOf('fields/eustache/field.json'));
+  assert.equal(c.light, null);
+  assert.deepEqual(c.maybe.map(u => u.name), ['Saint-Thomas', 'Saint-Damase', 'Chicot', 'Saint-Bernard']);
+  const n = soilLightNote(c);
+  assert.match(n, /Saint-Thomas \(5 % clay\)/);
+  assert.match(n, /Saint-Thomas, Saint-Damase, Chicot and Saint-Bernard have under 20 % clay and may be sand or sandy loam/);
+  assert.match(n, /Tick the box/);
+});
+
+test('soil check edge cases: threshold, named textures, no texture, no soil layer', () => {
+  const f = comps => ({ layers: [{ key: 'soil', classes: [{ components: comps }] }] });
+  assert.equal(soilLightCheck(f([{ name: 'A', texture: `surface: ${LIGHT_MAX_CLAY} % clay` }])).light, 0);   // 20 % is sandy clay loam at the lightest
+  assert.equal(soilLightCheck(f([{ name: 'A', texture: '19.5 % clay' }])).light, null);
+  assert.equal(soilLightCheck(f([{ name: 'A', texture: 'loamy sand on till' }])).light, null);
+  assert.equal(soilLightCheck(f([{ name: 'A', texture: '' }])).maybe[0].what, 'texture not given');
+  assert.equal(soilLightCheck(f([{ name: 'A', texture: 'x' }, { name: 'A', texture: 'y' }])).units.length, 1);   // a series listed twice counts once
+  assert.equal(soilLightCheck({ layers: [] }), null);
+  assert.match(soilLightNote(soilLightCheck(f([{ name: 'A', texture: '3 % clay' }]))), /A has under 20 % clay/);
+});

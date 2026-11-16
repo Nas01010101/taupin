@@ -1,6 +1,6 @@
 """Preprocessing, metrics, calibration and bootstrap shared by training, baseline and export.
 
-`preprocess` is the reference preprocessing from docs/spec.md; the browser must match it.
+`preprocess` is the reference preprocessing; the browser (web/js/classify.js) must match it.
 """
 import numpy as np
 from PIL import Image, ImageOps

@@ -23,7 +23,7 @@ that count:
 
 | Step | What the farmer gets | Data behind it |
 |---|---|---|
-| Plan | wireworm and corn rootworm level per year for three rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
+| Plan | wireworm and corn rootworm level per year for seven rotations, 2026 to 2030 | rule engine with a source per rule (`src/taupin/engine.py`) |
 | Scout: when | the week to set bait traps (soil at 12 °C in the top 10 cm) | NASA POWER `TSOIL1`, 1995 to 2025 |
 | Scout: which fields | the field's rank (low, middle or high third) among 82 Quebec fields | field risk model: 2 field-form answers + 2 NASA POWER values |
 | Scout: where | ten trap points spread over four scouting zones, as GPX, CSV and GeoJSON | lidar relief and wetness index, NASA HLS NDVI, Landsat surface temperature, soil map |
@@ -48,7 +48,7 @@ Taupin does not replace it. What Taupin adds around it:
 | one risk level for the whole field | trap points spread over the field's soil, relief and vegetation zones |
 | no weather or satellite input | NASA POWER soil temperature and soil wetness; satellite layers per cell |
 | no calendar | the week the soil reaches the trapping temperature |
-| current year | five years, three rotations side by side |
+| current year | five years, seven rotations side by side |
 | identification by sending samples | photo model in the browser, with the lab as the fallback |
 | account required, model and data not published | open code, open model, public data, runs offline |
 
@@ -72,7 +72,7 @@ open complement, not a stronger predictor.
 | Six-step farmer flow on the first screen; model numbers under "Details" | on `claude/two-versions` | `web/index.html`, `web/app.css` |
 | Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | on `claude/two-versions` | `web/js/finds.js`, `web/test/finds.test.mjs` |
 | Research outline and challenge fit | on `claude/two-versions` | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
-| Four rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
+| Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
 | GPM IMERG daily rain and SMAP L4 soil moisture | on `soil-water` | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
 
 ## Data
@@ -172,16 +172,17 @@ The full table, with file paths and weak points, is in `docs/CHALLENGE_FIT.md`.
 | Usefulness to a farmer: trap locations, install dates, count sheet, agronomist record | done on `build` | trap points as GPX, CSV and GeoJSON; three-lift count sheet; text record |
 | 3D field drawn from soil, terrain and NASA layers instead of a schematic surface | done on `build` | 300 x 300 cells of 2 m from HRDEM, HLS, Landsat and the soil map |
 | The scouting zones are classes of the layers, not a wireworm risk map | known | no public data gives wireworm counts inside a field; the app says so |
-| Crop history per year (AAFC Annual Crop Inventory) | done for three baked fields | Laval, Saint-Eustache and Mirabel carry 2011 to 2025 ACI history; the closest rotation and forage years preset the plans. ACI is 30 m, so a share near 50 % means a split field |
+| Crop history per year (AAFC Annual Crop Inventory) | done for three baked fields | Laval, Saint-Eustache and Mirabel carry 2011 to 2025 ACI history; the closest rotation and forage years preset the plans. A rotation is matched by its repeating cycle (corn-soybean repeats every two years), preset only when it agrees with at least 4 of the last 5 years, and a tie goes to the one agreeing on the more recent years (`src/taupin/crophist.py`): Laval corn every year, Mirabel corn-soybean-wheat, Saint-Eustache none (hay in 2 of the last 5 years). ACI is 30 m, so a share near 50 % means a split field |
 | Risk model shown in the app next to the rule trace | done on `build` | `web/data/field_risk.json`; the output is a rank, not a probability |
 | Photos that are not soil animals still get an answer (92 of 157 audited-out images) | known | add a "not a soil animal" check or more such training photos; say so in the app |
 | No test photos taken in Quebec fields; outside-set audit has one rater | open | field photos from trails on 15 November, labelled as staged where they are |
 | "Over 90 %" | two sources, same research group | Labrie et al. 2020: 92.6 % of corn fields under 1 wireworm per trap (84 fields, 2012 to 2016). CÉROM report PV-3.2-2015-002: the threshold was exceeded in 10 % of cases in the 2011 to 2015 surveys, and in 25 % of 163 sites chosen for higher risk in 2016. Cite both in the deck |
 | Deck slide 6 and its capture showed the previous photo model | done | rebuilt from `model/metrics.json`; the cover runs `web/js/scene.js` on the same layer files as the app |
 | "Use my field": any coordinates, live NASA POWER call | done on `build` | `web/js/power.js` asks NASA POWER for TSOIL1 and GWETROOT at the entered coordinates and gives the trap date, the yearly dates and the field ranking; the two coordinates are the only thing sent. For the demo site the browser result equals the baked `soil.json` and `field_risk.json` (31 years of dates, 11 years of ranking inputs, 0 differences). The 3D field, the trap points and the pest levels stay the demo square; the rotation water columns use the field's own IMERG rain |
-| 3D field and trap points for any field | partly done | three Quebec farm fields are baked with `taupin.fetch_layers` and `taupin.layers`. Holes: HRDEM project coverage (Calumet has none; Saint-Eustache needs the Partie_NO tile), IRDA soil polygons only on sheet 31H12, `lightSoil` not yet derived from IRDA texture, POWER grid of about 50 km |
+| 3D field and trap points for any field | partly done | three Quebec farm fields are baked with `taupin.fetch_layers` and `taupin.layers`. Holes: HRDEM project coverage (Calumet has none; Saint-Eustache needs the Partie_NO tile), IRDA soil polygons only on sheet 31H12, `lightSoil` read off the soil map only where it can be: units with 20 % surface clay or more (or organic) cannot be sand or sandy loam; the map gives clay, not sand, so units under 20 % clay ask the farmer (`web/js/fieldrisk.js` `soilLightCheck`; Saint-Eustache asks, Laval and Mirabel are no), POWER grid of about 50 km |
 | Route to the Quebec lab for unclear photos | done on `build` | an unclear photo shows the lab's steps: online form first, then images by email or samples by post, first answer in 24 to 48 h (MAPAQ Laboratoire d'expertise et de diagnostic en phytoprotection, quebec.ca). The farmer sends it; the app sends nothing |
-| French interface | open | the users are Quebec farmers |
+| French interface | done | `web/js/i18n-fr.js`; the users are Quebec farmers |
+| Soil organic matter in the app and the pest engine | done | `src/taupin/organic.py` bakes an `om` layer and per-unit values from CanSIS ORGCARB x 1.724; `web/js/organic.js` adds SoilGrids 2.0 0-30 cm for any point; a measured value over the RAP factor of 10 % switches the wireworm case. Saint-Eustache: survey 7.1 %, SoilGrids 5.9 %. The park has carbon for 4.4 of 36 ha, so SoilGrids or the default is used there |
 | One file listing every data source with licence and access date | done | `DATA_SOURCES.md` |
 | Digitized corn counts give 6 fields at or above 1 per trap; the paper reports 5 of 68 | known | one field sits on the threshold; noted in `risk/digitize.py` |
 | The demo field is a park, not a farm; 1.3 ha of the square is open ground | known | shown as a scenario; no trapping or digging in the park |
@@ -195,29 +196,30 @@ demo field on equal weights, fall plough, as `web/js/soilwater.js` computes them
 
 | Rotation | Dry-year water, mm | Heavy rain on bare soil, days in 5 years | USLE C | N to buy, kg/ha in 5 years | Residue, t/ha a year |
 |---|---|---|---|---|---|
-| Corn every year | 32 spare | 7 | 0.40 | 725 | 7.7 |
+| Corn every year | 32 spare | 7 | 0.40 | 725 | 7.0 |
 | Corn and soybean (current) | 18 short | 8.5 | 0.44 | 415 | 5.7 |
 | Corn, soybean, wheat | 47 short | 9.6 | 0.43 | 400 | 5.1 |
 | With buckwheat | 35 short, 1 year unknown | ? | 0.4 | ? | 5.7 |
 
-Corn every year ranks first on equal weights. That is the model's output, and it shows what the
-model leaves out:
+Corn right after corn now loses 700 kg/ha of yield and the residue that goes with it (Gagnon et al.
+2019, Quebec clay, `web/data/crops.json` source `GAGNON_ROT`); the first year looks at the last crop
+of the farmer's history. Corn every year still ranks first on equal weights. That is the model's
+output, and it shows what the model leaves out:
 
 | Gap | Effect on the ranking | Next step |
 |---|---|---|
 | Soil water stored at sowing is not counted | a crop sown early (wheat) looks drier than it is | FAO-56 Ch. 8 soil water balance started from SMAP or GWETROOT at sowing, with available water from the CanSIS soil tables |
-| No yield penalty for corn after corn | corn every year gets full residue and no yield loss | a sourced penalty from Quebec or Ontario trials applied to yield, residue and nitrogen |
 | No cover crops | wheat and soybean years keep bare soil after harvest | a cover crop option after wheat and soybean, with its USLE C and nitrogen effect |
 | USLE uses C only; K and LS of the field are not used | soil loss is compared, not estimated in t/ha | A = R K LS C P for the demo square from HRDEM slope and CanSIS texture; slope class from the farmer elsewhere |
 | Buckwheat has no FAO-56 coefficient, Quebec nitrogen rate or CGQ yield | its rotation ranks after the fully scored ones | find a measured coefficient and a CRAAQ rate; until then ? stays ? |
-| Pest levels are the demo square's for any field | pest points do not follow the farmer's history | ask for the last two crops and feed them to `web/js/risk.js` |
+| Pest levels are the demo square's for any field | partly done: the three baked farm fields start from their own crop history (`taupin.bake --fields`, `web/data/fields/<id>/risk.json`); typed coordinates still get the demo square's | ask for the last two crops elsewhere and bake or compute the table from them |
 | Equal weights, no yield or price | the ranking ignores income | farmer weights per priority; CGQ prices per crop |
 | SMAP for the demo field only | no satellite soil moisture for another field | check whether GIBS answers browser requests; if yes, fetch the 0.4 degree box for the entered point |
 
 ## Submission checklist
 
-- [ ] Deck at 7 slides or fewer (done), public link, no login (shared as "anyone with the link"; check it in a private window)
-- [ ] Public repository with licence, README, run commands
+- [x] Deck at 7 slides or fewer, public link, no login
+- [x] Public repository with licence, README, run commands
 - [ ] References list covering NASA POWER, GPM IMERG, SMAP L4, FAO-56, OMAFRA 23-005, CRAAQ and MAPAQ nitrogen grids, Lal 2005, HLS, Landsat, HRDEM, IRDA, CanSIS, OpenStreetMap, Labrie et al. 2020, GBIF, Wikimedia Commons, VFF QC, RAP and MAPAQ documents
-- [ ] All text in English
+- [x] Interface in English and French (`?lang=fr`)
 - [ ] Every number in the deck and README traceable to `model/metrics.json` or `risk/model/metrics.json`

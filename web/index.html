@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Taupin: soil insects on a Quebec parcel</title>
-<meta name="description" content="Identify a soil insect from a photo, see when to set bait traps from NASA POWER soil temperature, and compare four crop rotations on soil loss, water, nitrogen and pests with NASA GPM rain and SMAP soil moisture.">
+<meta name="description" content="Identify a soil insect from a photo, see when to set bait traps from NASA POWER soil temperature, and compare seven crop rotations on soil loss, water, nitrogen and pests with NASA GPM rain and SMAP soil moisture.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#15160f">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org https://agriculture.canada.ca; connect-src 'self' data: blob: https://power.larc.nasa.gov https://datacube.services.geo.ca https://canelevation-dem.s3.ca-central-1.amazonaws.com https://s3.amazonaws.com https://agriculture.canada.ca https://sdmdataaccess.sc.egov.usda.gov; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org https://agriculture.canada.ca; connect-src 'self' data: blob: https://power.larc.nasa.gov https://datacube.services.geo.ca https://canelevation-dem.s3.ca-central-1.amazonaws.com https://s3.amazonaws.com https://agriculture.canada.ca https://sdmdataaccess.sc.egov.usda.gov https://rest.isric.org; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="nasa.css">
 <script type="importmap">{"imports": {"three": "./vendor/three/three.module.js", "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"}}</script>
+<script type="module" src="js/i18n.js"></script>
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -42,6 +43,7 @@
   <p class="tag">Wireworm scouting for a Quebec field, before you buy coated seed</p>
   <p id="model-status" class="status" role="status" data-status="loading">Loading the photo check…</p>
   <button id="theme" type="button" class="ghost" aria-label="Switch between light and dark theme">Theme</button>
+  <button id="lang" type="button" class="ghost" aria-label="Language / Langue">FR / EN</button>
 </header>
 <p id="fatal" class="bad" hidden></p>
 <nav class="flow" aria-labelledby="h-flow">
@@ -53,7 +55,7 @@
     <li><a href="#sec-traps"><strong>Where to trap.</strong> Ten trap points on the 3D field.</a></li>
     <li><a href="#h-counts"><strong>Enter counts.</strong> Wireworms per trap, against the threshold.</a></li>
     <li><a href="#identify"><strong>Photo and notes.</strong> Log a soil insect, standing water, ground cover or a water channel on the field.</a></li>
-    <li><a href="#sec-risk"><strong>What to plant.</strong> Four rotations over five years: soil, water, nitrogen and pests.</a></li>
+    <li><a href="#sec-risk"><strong>What to plant.</strong> Seven rotations over five years: soil, water, nitrogen and pests.</a></li>
   </ol>
 </nav>
 <main class="grid">
@@ -67,6 +69,7 @@
     </div>
     <div id="legend" class="layer-legend small" aria-live="polite"></div>
     <div id="crop-hist" class="layer-legend small"></div>
+    <div id="hist-edit"></div>
     <div id="mapnote" class="mapnote"></div>
     <p class="muted small">Drag to turn. Click a pin to read it, move it or delete it. Click the ground to place the photo pin, or a note when Add a note on the map is on. Height drawn 2 times, trees at their lidar height; the cut edge marks 10 cm, the depth the trap date is read at.</p>
     <section id="sec-traps" aria-labelledby="h-traps">
@@ -165,10 +168,13 @@
       <h2 id="h-risk">6. What to plant: seven rotations for soil, water and pests</h2>
       <p class="lede">Tick what matters on this farm and mark the rotation you run now. The others are ranked and compared with it.</p>
       <div id="sw-controls"></div>
+      <div id="sw-build"></div>
       <div id="sw-notes"></div>
       <div class="table-wrap" id="sw-table"></div>
       <div id="sw-cards" class="rots"></div>
       <details class="how"><summary>How the soil and water columns are computed</summary><div id="sw-how"></div></details>
+      <h3>Soil organic matter</h3>
+      <div id="organic" aria-live="polite"></div>
       <h3>Pest level per year</h3>
       <p class="small muted">Wireworm and rootworm level per year for each rotation. Select a year for its reasons.</p>
       <div class="zones" role="group" aria-label="Zone">
@@ -197,7 +203,7 @@
     <li>Bois-de-Liesse is a park used as a stand-in for a farm field. No insects were collected there.</li>
     <li>A photo identification is triage, not a count. Levels change only with bait-trap counts, which the agronomist records.</li>
     <li>NASA POWER soil temperature is a grid of about 50 km; a field can be a few days ahead or behind.</li>
-    <li>Not a NASA, ESA or CSA product. Uses NASA open data and ESA Copernicus Sentinel-2 data through NASA HLS. CSA RADARSAT Constellation soil moisture is being added.</li>
+    <li>Not a NASA, ESA or CSA product. Uses NASA open data, ESA Copernicus Sentinel-2 data through NASA HLS, and the AAFC crop map, which AAFC classifies from Sentinel-2, Landsat and CSA RADARSAT Constellation radar.</li>
   </ul>
   <h3>Photo check: test results</h3>
   <div id="model-metrics" class="small"></div>

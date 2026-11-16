@@ -1,5 +1,6 @@
 // HTML string renderers. Pure (no DOM access) so node --test can check them. Every value that
 // comes from a file, the model or the user goes through esc() before it reaches markup.
+import { PAST_CROPS as PAST, PAST_LABEL as PAST_NAMES } from './history.js';
 import { UNCLEAR, formatAnswer } from './classify.js';
 import { GROUP, legend, resolutionText } from './layers.js';
 import { GENUS_LABEL, LAB, LIFTS, THRESHOLDS, liftLine, verdict } from './scout.js';
@@ -70,6 +71,12 @@ function trapPlanHTML(p) {
     `<li><strong>The count decides the ${esc(p.decides)} seed.</strong> At or above the threshold, order coated seed for the field next spring; below it, untreated seed.</li></ol>`;
 }
 
+// How the range did on misses it was not built from (forecast.js rangeCheck), as a sentence.
+function rangeCheckText(c) {
+  if (!c?.n) return '';
+  return ` Checked on misses it was not built from (each tested against the range made from the earlier ones), the range held ${esc(c.inside)} of ${esc(c.n)} times (${esc(Math.round(100 * c.inside / c.n))} %).`;
+}
+
 export function trapHTML(tw, soil, evidence) {
   const sign = tw.trend >= 0 ? '+' : '';
   const ww = evidence.some(e => e.kind === 'wireworm');
@@ -82,7 +89,7 @@ export function trapHTML(tw, soil, evidence) {
     soilChartSVG(soil) +
     `<details class="more"><summary>Method and sources</summary><p>The trap date is the end of the first 7 days averaging 12 °C or more at 0-10 cm after 1 March. ` +
     `Trend ${sign}${tw.trend.toFixed(2)} ± ${tw.ci.toFixed(2)} days per decade (95 %): no clear shift.</p>` +
-    (tw.fc?.trap_12C ? `<p>Forecast: four models (${Object.entries(tw.fc.trap_12C.errors).map(([k, e]) => `${esc(k)} ${e.toFixed(1)} d`).join(', ')}, mean backtest miss) were fit on the years up to each year from the 11th on and asked for the next 1 to 5 years. The one with the smallest miss is used: ${esc(tw.fc.trap_12C.label)}. The range is the 10th to 90th percentile of its misses at that horizon. No seasonal weather forecast is used.</p>` : '') +
+    (tw.fc?.trap_12C ? `<p>Forecast: four models (${Object.entries(tw.fc.trap_12C.errors).map(([k, e]) => `${esc(k)} ${e.toFixed(1)} d`).join(', ')}, mean backtest miss) were fit on the years up to each year from the 11th on and asked for the next 1 to 5 years. The one with the smallest miss is used: ${esc(tw.fc.trap_12C.label)}. The range is the 10th to 90th percentile of its misses at that horizon.${rangeCheckText(tw.fc.trap_12C.check)} No seasonal weather forecast is used.</p>` : '') +
     `<ul class="src"><li>${esc(soil.sources.tsoil)}</li><li>${esc(soil.sources.trap)}</li><li>${esc(soil.sources.crw)}</li></ul></details>`;
 }
 
@@ -239,6 +246,20 @@ export function countResultHTML(s, minTraps) {
 
 // Crop history strip: one swatch per year (AAFC ACI majority class over the open cells, with
 // the share of cells that class covers), then the rotation it matches and the model inputs.
+// Which listed rotation the history follows (src/taupin/crophist.py summary): the preset one and
+// any that agree on as many years, or, when none reaches the bar, why nothing is preset.
+function rotationText(crops, names) {
+  const nm = id => names[id] ?? id, and = xs => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  if (crops.rotation) {
+    const ties = crops.rotation_ties ?? [];
+    return `Closest rotation: ${esc(nm(crops.rotation))} (${esc(crops.rotation_match)} recent years agree), preset below. `
+      + (ties.length ? `${esc(and(ties.map(nm)))} ${ties.length > 1 ? 'agree' : 'agrees'} on as many years; ${esc(nm(crops.rotation))} agrees on the more recent ones. ` : '');
+  }
+  if (!crops.rotation_best) return '';
+  const hay = crops.forage_years_last5 ? `; ${esc(crops.forage_years_last5)} of the last five years were hay or pasture, which no listed rotation has` : '';
+  return `No listed rotation fits: the closest agree on only ${esc(crops.rotation_match)} recent years${hay}. Nothing is preset; mark the rotation you follow below. `;
+}
+
 export function cropHistHTML(crops, names = {}) {
   if (!crops) return '';
   const years = Object.keys(crops.per_year).sort();
@@ -249,7 +270,22 @@ export function cropHistHTML(crops, names = {}) {
   const last = crops.per_year[crops.last_year];
   return `<strong>Crop history, ${esc(years[0])} to ${esc(years[years.length - 1])}</strong><ul class="crop-strip">${cells}</ul>`
     + `<p>Last year: ${esc(last?.name ?? 'no crop class')}${last ? `, ${Math.round(last.share * 100)} % of the open cells` : ''}. `
-    + `Closest rotation: ${esc(names[crops.rotation] ?? crops.rotation)} (${esc(crops.rotation_match)} recent years agree), preset below. `
+    + rotationText(crops, names)
     + `Grass or forage years in the last five: ${esc(crops.forage_years_last5)}, preset in the field rank. Corn years in a row at the end: ${esc(crops.corn_run)}. `
     + `A share near 50 % means the field was split between two crops that year. ${esc(crops.source)}.</p>`;
+}
+
+// "Check your crop history": the five years before the plan, each a picker with where its value
+// comes from, an optional last hay or pasture year, and buttons to confirm or go back.
+export function historyEditHTML({ rows, lastHay, hasSat, active, status = '', startYear }) {
+  const FROM = { satellite: 'satellite map', farmer: 'you', confirmed: 'checked', none: 'not known' };
+  const opts = (sel) => `<option value="">?</option>${PAST.map(c => `<option value="${c}"${c === sel ? ' selected' : ''}>${esc(PAST_NAMES[c])}</option>`).join('')}`;
+  const picks = rows.map(r => `<label class="hist-year"><span>${r.year}</span><select data-hist-year="${r.year}">${opts(r.crop)}</select>
+<small>${esc(FROM[r.from])}${r.from === 'satellite' && r.share != null ? `, ${Math.round(r.share * 100)} %` : ''}</small></label>`).join('');
+  return `<details class="hist"${active || !hasSat ? ' open' : ''}><summary>${hasSat ? 'Check your crop history' : 'Enter your crop history'}</summary>
+<p class="small">${hasSat ? 'The years come from the satellite crop map. Change any year that is wrong: the pest levels and every rotation are then scored from your years.' : 'This field has no satellite crop history here. Enter what grew each year: the pest levels and every rotation are then scored from your years.'}</p>
+<div class="hist-row">${picks}</div>
+<div class="hist-row"><label>Last year in hay or pasture, if before ${startYear - 5} <input type="number" data-last-hay min="1950" max="${startYear - 1}" step="1" inputmode="numeric" value="${lastHay ?? ''}"></label>
+${hasSat ? '<button type="button" data-hist-confirm>These years are right</button>' : ''}<button type="button" class="ghost" data-hist-reset>${hasSat ? 'Back to the satellite years' : 'Clear'}</button></div>
+<p class="small" role="status">${esc(status || (active ? 'The pest levels below use your years.' : ''))}</p></details>`;
 }

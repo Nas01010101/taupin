@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { ra, et0, kcAt, plantingDoy, cropYear, climatology, rotationMetrics, rank, versus, gaps } from '../js/soilwater.js';
+import { ra, et0, kcAt, plantingDoy, cropYear, climatology, rotationMetrics, rank, versus, gaps, conflicts } from '../js/soilwater.js';
 import { riskView } from '../js/risk.js';
 
 const data = p => JSON.parse(readFileSync(new URL(`../data/${p}`, import.meta.url), 'utf8'));
@@ -84,7 +84,7 @@ test('every rotation has a card; gaps list unsourced and assumed values', () => 
   assert.ok(rot.rotations[rot.default_current]);
   const g = gaps(risk.rotations.C_with_buckwheat, crops);
   assert.ok(g.some(t => /Buckwheat: no sourced water use/.test(t)));
-  assert.ok(g.some(t => /Soybean: assumption/.test(t)));
+  assert.ok(g.some(t => /Soybean: .*assum/.test(t)));
   assert.ok(!gaps(['corn'], crops).length);
 });
 
@@ -94,4 +94,59 @@ test('every crop value has a source key that exists, or is null', () => {
       if (c[k] != null) assert.ok(crops.sources[c[k]], `${c.name} ${k}`);
     }
   }
+});
+
+test('the researched crops: every crop the farmer can enter in the history that has data is scored', () => {
+  for (const id of ['barley', 'oat', 'canola']) assert.ok(crops.crops[id], id);
+  // Barley and oats have every column; canola has no season, sowing rule, N credit or residue ratio.
+  const m = rotationMetrics(['barley', 'oat', 'corn', 'soybean', 'wheat'], { crops: {} }, crops, null);
+  assert.deepEqual(m.years.map(y => y.c), [0.35, 0.35, 0.40, 0.50, 0.35]);
+  assert.deepEqual(m.years.map(y => y.n), [75, 50, 145, 15, 80]);           // mid-range minus the previous crop's credit
+  assert.ok(m.total.residue > 0 && m.unknown.residue === 0);
+  const cn = rotationMetrics(['canola', 'wheat', 'corn', 'soybean', 'wheat'], { crops: {} }, crops, null);
+  assert.equal(cn.years[1].n, null);                                         // no sourced canola credit: wheat's N stays unknown
+  assert.equal(cn.total.n, null);
+  const g = gaps(['canola', 'buckwheat'], crops);
+  for (const re of [/Canola: no sourced season length/, /Canola: no sourced nitrogen left/, /Canola: no sourced residue ratio/,
+    /Buckwheat: assumption: Ontario maxima/, /Buckwheat: assumption: IPCC/]) assert.ok(g.some(t => re.test(t)), re);
+  assert.ok(!g.some(t => /Buckwheat: no sourced (Quebec yield|nitrogen need|residue ratio)/.test(t)));
+});
+
+test('rotation conflicts: soybean or canola right after buckwheat, the last history year included', () => {
+  const c = conflicts(['corn', 'buckwheat', 'soybean', 'wheat', 'corn'], crops);
+  assert.equal(c.length, 1);
+  assert.match(c[0], /^Soybean right after buckwheat: white mould .+ \[OMAFRA Publication 811 \(2022\), Buckwheat\]$/);
+  assert.deepEqual(conflicts(['buckwheat', 'corn', 'soybean', 'wheat', 'corn'], crops), []);
+  assert.equal(conflicts(['soybean', 'wheat', 'corn', 'soybean', 'wheat'], crops, ['sod', 'buckwheat']).length, 1);
+  assert.equal(conflicts(['canola', 'wheat', 'corn', 'soybean', 'wheat'], crops, ['buckwheat']).length, 1);
+  assert.deepEqual(conflicts(['corn'], { crops: {}, sources: {} }), []);
+  for (const id of ['C_with_buckwheat', 'E_buckwheat_first']) assert.equal(conflicts(risk.rotations[id], crops).length, 1, id);
+  for (const r of crops.rotation_conflicts) assert.ok(crops.sources[r.src]);
+});
+
+test('cards: the buckwheat then soybean warning is in the risks of the cards that have it', async () => {
+  const { cardsHTML } = await import('../js/swui.js');
+  const ids = ['C_with_buckwheat', 'B_corn_soy_wheat'], sequences = Object.fromEntries(ids.map(id => [id, risk.rotations[id]]));
+  const byId = Object.fromEntries(ids.map(id => [id, rotationMetrics(sequences[id], { crops: {} }, crops, null)]));
+  const ranked = rank(ids.map(id => ({ id, metrics: byId[id] })), ['soil']);
+  const html = cardsHTML(ranked, byId, { names: { C_with_buckwheat: 'C', B_corn_soy_wheat: 'B' }, texts: rot.rotations,
+    current: 'B_corn_soy_wheat', cropData: crops, sequences, chosen: ['soil'], prior: ['sod'] });
+  const cards = html.split('<article').slice(1);
+  assert.equal(cards.filter(c => /Soybean right after buckwheat/.test(c)).length, 1);
+  assert.ok(cards.find(c => /<h3>\d\. C</.test(c)).includes('Soybean right after buckwheat'));
+});
+
+test('corn right after corn loses the sourced yield and its residue (Gagnon et al. 2019)', () => {
+  const pen = crops.crops.corn.after_same_penalty_kg_ha, y0 = crops.crops.corn.yield_kg_ha;
+  assert.equal(pen, 700);
+  assert.ok(crops.sources[crops.crops.corn.after_same_src]);
+  const cc = rotationMetrics(['corn', 'corn', 'soybean', 'corn', 'corn'], { crops: {} }, crops, null);
+  assert.deepEqual(cc.years.map(y => y.yield), [y0, y0 - pen, crops.crops.soybean.yield_kg_ha, y0, y0 - pen]);
+  close(cc.years[1].residue, (y0 - pen) * crops.crops.corn.residue_ratio / 1000, 1e-9);
+  // the first year looks at the last crop of the farmer's history
+  const after = rotationMetrics(['corn', 'soybean'], { crops: {} }, crops, null, 'fall_plow', ['wheat', 'corn']);
+  assert.equal(after.years[0].yield, y0 - pen);
+  // corn every year now carries the penalty in four of five years
+  const ccc = rotationMetrics(['corn', 'corn', 'corn', 'corn', 'corn'], { crops: {} }, crops, null);
+  close(ccc.total.residue, (y0 + 4 * (y0 - pen)) / 5 * crops.crops.corn.residue_ratio / 1000, 1e-9);
 });

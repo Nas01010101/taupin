@@ -2,6 +2,8 @@
 
 # Taupin
 
+English · [Français](README.fr.md)
+
 Taupin helps a grain farmer in Canada or the US and their agronomist scout a field for wireworms before buying
 insecticide-coated seed. It dates the bait-trap week from NASA POWER soil temperature, places the
 traps on a 3D field built from lidar, NASA HLS, Landsat and the soil map, takes the counts, names a
@@ -10,6 +12,9 @@ nitrogen, crop residue and pests, with NASA GPM rain and SMAP soil moisture. It
 runs in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
+
+App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s:
+[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4); a 46 s cut with the photo model: [`docs/assets/demo-46s.mp4`](docs/assets/demo-46s.mp4).
 
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">
@@ -21,7 +26,7 @@ Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 ## Inputs
 
 - **Main input: satellite and NASA data.** GPM IMERG rain, SMAP L4 soil moisture, HLS (NASA Landsat and ESA Sentinel-2) and Landsat
-  vegetation and surface temperature, and NASA POWER (MERRA-2) soil temperature drive the 3D field
+  vegetation and surface temperature, the AAFC crop map (classified from Sentinel-2, Landsat and CSA RADARSAT Constellation radar), and NASA POWER (MERRA-2) soil temperature drive the 3D field
   layers, the field risk model (logistic, 4 inputs, fitted on 82 Quebec fields from Labrie et al.
   2020, leave-one-field-out AUC 0.80) and the rotation scores.
 - **Extra input: phone photos.** The photo model is DINOv2-S (Meta, Apache-2.0) with an 8-class head,
@@ -49,17 +54,17 @@ the code the page runs (2026-11-15).
 | Region | Lat, lon | Trap week (soil at 12 °C) | Field rank (year) | Inputs outside the Quebec training range | GPM rain, mm a year, 2001 to 2025 |
 |---|---|---|---|---|---|
 | Montérégie, Quebec | 45.63, -72.96 | 15 May | low (2026) | none | 824 to 1,334 |
-| Chatham-Kent, Ontario | 42.4, -82.18 | 30 Apr | low (2026) | none | 738 to 1,387 |
+| Chatham-Kent, Ontario | 42.4, -82.18 | 29 Apr | low (2026) | none | 738 to 1,387 |
 | Prince Edward Island | 46.35, -63.3 | 29 May | low (2026) | none | 865 to 1,515 |
 | Saskatoon, Saskatchewan | 52.13, -106.67 | 19 May | high (2026) | gwet_spring | 207 to 724 |
-| Story County, Iowa | 42.03, -93.62 | 23 Apr | high (2026) | gwet_spring | 645 to 1,317 |
+| Story County, Iowa | 42.03, -93.62 | 22 Apr | high (2026) | gwet_spring | 645 to 1,317 |
 | Magic Valley, Idaho | 42.56, -114.46 | 8 May | low (2026) | gwet_spring, tsoil_winter_min_c | 148 to 472 |
 
 The field rank was fitted on Quebec fields; where an input falls outside that range the page says so
 and the rank is an extrapolation. The 3D terrain (NRCan lidar) and the soil map are one Quebec field.
 
 Next: trap counts from Ontario, the Prairies and the US to refit the rank per region, USGS 3DEP lidar
-for US fields, Canadian Space Agency RADARSAT Constellation soil moisture (being added), then any country with trap
+for US fields, Canadian Space Agency RADARSAT Constellation soil moisture as a direct layer, then any country with trap
 counts, soil maps and terrain.
 
 ## Two audiences
@@ -95,7 +100,8 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   date for each year since 1995 and the field's rank. Only the two coordinates leave the device,
   and the answer is kept for use without a network. It also asks for daily NASA GPM IMERG rain and air
   temperature, so the water columns of the rotation table are the field's own. The 3D field, the trap
-  points and the pest levels stay the demo square.
+  points and the pest levels stay those of the field on screen: the demo square, or one of the three
+  baked farm fields, whose pest levels start from their own crop history.
 - **Count.** A sheet for three lifts per trap. Each lift is compared on its own with the threshold
   of the dominant species (3 per trap for *Hypnoidus abbreviatus*, 1 for *Agriotes*, *Limonius*
   and *Melanotus*; RAP Grandes cultures, Agri-Réseau doc. 115269).
@@ -116,6 +122,23 @@ How Taupin answers the challenge and its judging criteria: [`docs/CHALLENGE_FIT.
   matters and the rotations are ranked on those. Each rotation card gives why it is there, the
   evidence, gains and losses against the current rotation, the information gaps and the risks. A
   value with no source shows as ? and is never counted as zero.
+- **Your own rotation.** Under "Build your own rotation" the farmer picks a crop for each year, from
+  the crops that have sourced values in `web/data/crops.json` (a crop added there becomes pickable),
+  and adds up to three rotations, kept in the browser only. They join the table, the cards and the
+  "current rotation" choice. Their pest levels come from `web/js/engine.js`, a line-for-line port of
+  `src/taupin/engine.py` that reads the rule constants from `risk.json`; `web/test/engine.test.mjs`
+  checks it against every preset of `risk.json`, every 5-year sequence of the four crops and 80
+  seeded cases with traces (`python -m taupin.engine_parity` writes the fixture). Their card text is
+  written from the engine rules that applied, each with its source. They start from the same crop
+  history as the presets: the field's own on a baked farm field, three sod years on the park.
+- **Your crop history.** Under the crop strip, "Check your crop history" shows 2021 to 2025, pre-filled
+  from the satellite crop map on a baked farm field (with its share of the open cells) and empty
+  elsewhere, plus the last hay or pasture year if it is earlier. A year the farmer changes, or a last
+  hay year, becomes the engine's start: every rotation, presets included, is then scored in the
+  browser from those years (`web/js/history.js`, `web/js/engine.js`). On Laval, 2025 soybean instead
+  of corn takes 2026 corn rootworm from HIGH to LOW. The agronomist record lists each year with its
+  source (satellite map, confirmed, or entered by the farmer). Kept in the browser only, per field.
+  `web/test/history.test.mjs` also checks that each farm's baked table equals the browser engine.
 - **Hand over.** Trap points as GPX, CSV and GeoJSON, and a text record with the trap date, the
   counts, the ranking and the photos, for the agronomist. Taupin never decides the prescription.
   The agronomist signs.
@@ -188,8 +211,7 @@ flowchart LR
 
 Another field is baked with `python -m taupin.fetch_layers --work <dir> --lat <lat> --lon <lon> --way
 <osm way> --hrdem-id <project>`, then `python -m taupin.layers --work <dir> --irda <dir> --cansis <dir>
---out web/data/fields/<id> --name <name>`. It
-and opens with `?field=<id>` once listed in `web/data/fields/index.json`.
+--out web/data/fields/<id> --name <name>`. The field then opens with `?field=<id>` once listed in `web/data/fields/index.json`.
 
 - `src/taupin/`: risk engine, POWER soil-temperature trap window, field layers, bake, local server,
   CLI classifier.
@@ -206,7 +228,10 @@ years, mean of the last 10, straight-line trend, average of the two). Each one i
 rolling-origin backtest (fit on the years up to t, predict t + 1 to t + 5), the lowest error is
 used, and the 80 % range is the 10th to 90th percentile of that model's own backtest misses. On
 the demo field (POWER TSOIL1 1995-2025) the mean wins: trap date miss 6.9 days against 8.4 for the
-trend, rootworm hatch 3.8 against 4.2. No weather forecast is used.
+trend, rootworm hatch 3.8 against 4.2. The range comes from the same misses that picked the model,
+so it is also checked on misses it was not built from (`rangeCheck`: each miss against the range
+made from the earlier ones): on the demo field the trap-date range held 61 of 70 times (87 %).
+No weather forecast is used.
 
 Tests: `uv run pytest` (engine, soil, bake, classifier parity, server, web checks) and
 `node --test web/test/*.test.mjs` (preprocessing, softmax, abstain, risk view, renderers). The
@@ -293,8 +318,15 @@ Gallery photos (Wikimedia Commons):
   "unclear" (`model/MODEL_CARD.md`).
 - Three Quebec farm fields are baked besides the park (Laval, Saint-Eustache, Mirabel). Their crop
   history is the AAFC Annual Crop Inventory at 30 m: the yearly crop is the majority class over the
-  open cells, so a share near 50 % means a split field. The IRDA soil map used covers sheet 31H12
+  open cells, so a share near 50 % means a split field. That history sets the earlier years of each
+  field's pest table (`python -m taupin.bake --fields` writes `web/data/fields/<id>/risk.json`); the
+  soil zones (organic matter 5 % and 12 %) are still the park's scenario. The IRDA soil map used covers sheet 31H12
   only, and HRDEM lidar has holes between projects (no coverage at Calumet).
+- Soil organic matter is the surface-layer organic carbon of each CanSIS soil component times
+  1.724 (van Bemmelen), one value per 1950s soil map unit; the true ratio runs to about 2.0, so it
+  is a lower estimate. SoilGrids 2.0 (250 m) is queried live as a second value and for fields
+  outside the baked set; it allows about 5 calls a minute and can time out. A lab test replaces both.
+  The pest engine reads organic matter only through the RAP factor "over 10 %".
 - No farmer or agronomist has tried the tool yet.
 - NASA POWER is a grid of about 50 km; a field can be a few days ahead of or behind the dates shown.
 - Not a NASA product. Uses NASA open data.
@@ -304,12 +336,18 @@ Gallery photos (Wikimedia Commons):
 ```bibtex
 @software{taupin2026,
   title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for a Quebec field},
+  author = {{Taupin contributors}},
   year  = {2026},
+  url   = {https://github.com/Nas01010101/taupin},
   note  = {NASA Space Apps Challenge 2026}
 }
 ```
 
 Cite the data sources above as well, in particular NASA POWER, NASA HLS and Labrie et al. 2020.
+
+## Field outing
+
+Photos from the team's outing are in [udem-ai-in-nature](udem-ai-in-nature/).
 
 ## AI assistance
 
