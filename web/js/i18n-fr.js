@@ -381,7 +381,7 @@ export const DICT = {
   'n/a': 's.o.',
   'No accuracy figures in model/metrics.json yet.': 'Aucun chiffre d\'exactitude dans model/metrics.json pour l\'instant.',
   'No model/metrics.json next to the model, so no accuracy is shown.': 'Pas de model/metrics.json à côté du modèle; aucune exactitude n\'est donc affichée.',
-  'Not a NASA, ESA or CSA product. Uses NASA open data and ESA Copernicus Sentinel-2 data through NASA HLS. CSA RADARSAT Constellation soil moisture is being added.': 'Ce n\'est pas un produit de la NASA, de l\'ESA ou de l\'ASC. Utilise les données ouvertes de la NASA et les données Sentinel-2 de Copernicus (ESA) par l\'entremise de NASA HLS. L\'humidité du sol de la Constellation RADARSAT de l\'ASC est en cours d\'ajout.',
+  'Not a NASA, ESA or CSA product. Uses NASA open data, ESA Copernicus Sentinel-2 data through NASA HLS, and the AAFC crop map, which AAFC classifies from Sentinel-2, Landsat and CSA RADARSAT Constellation radar.': 'Ce n\'est pas un produit de la NASA, de l\'ESA ou de l\'ASC. Utilise les données ouvertes de la NASA, les données Sentinel-2 de Copernicus (ESA) par l\'entremise de NASA HLS, et l\'inventaire des cultures d\'AAC, classé par AAC à partir de Sentinel-2, de Landsat et du radar de la Constellation RADARSAT de l\'ASC.',
 
   // AAFC crop classes (crop history strip)
   'Corn for grain': 'Maïs-grain',

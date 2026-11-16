@@ -179,7 +179,8 @@ function renderBuilder(status = '') {
 
 function renderSoilWater(view) {
   const clim = climNow(), o = state.sw, ids = view.rows.map(r => r.rotation);
-  const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(seqOf(r.rotation), clim ?? { crops: {} }, D.crops, r, o.tillage)]));
+  const prior = histStart()?.prior ?? D.risk.history?.prior ?? D.risk.rules?.default_prior ?? [];
+  const byId = Object.fromEntries(view.rows.map(r => [r.rotation, rotationMetrics(seqOf(r.rotation), clim ?? { crops: {} }, D.crops, r, o.tillage, prior)]));
   const rots = ids.map(id => ({ id, metrics: byId[id] })), fx = memory.noteEffects(state.notes);
   const ranked = rank(rots, o.chosen, fx.weights);
   const names = Object.fromEntries(view.rows.map(r => [r.rotation, r.custom ? `${r.name} (yours)` : r.name]));
@@ -191,7 +192,6 @@ function renderSoilWater(view) {
   $('#sw-notes').innerHTML = memoryui.impactHTML({ fx, chosen: o.chosen, impact, names, cover: Object.fromEntries(ids.map(id => [id, byId[id].total.c])) });
   $('#sw-table').innerHTML = sw.tableHTML(ranked, byId, names, o.current, impact.length && o.chosen.includes('soil') ? Object.fromEntries(impact.map(r => [r.id, r])) : null);
   // The crop before 2026 (farmer's history, else the baked record, else the default start) counts for the rotation conflicts.
-  const prior = histStart()?.prior ?? D.risk.history?.prior ?? D.risk.rules?.default_prior ?? [];
   $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen, prior });
   $('#sw-how').innerHTML = sw.climateHTML(clim, D.crops, D.weather, state.own ? coordText(state.own) : D.field.site.name);
 }
@@ -311,6 +311,7 @@ export async function ingest(blob, name, cell = null, { dropMs = 700 } = {}) {
     state.current = { kind: 'result', decision, effect, thumb: px.thumb, abstain: Number(state.model.labels.abstain_below ?? 0) };
     entry.pin = scene.addPin({ row: where.row, col: where.col, thumb: px.thumb, color: PIN[effect.kind], drop: dropMs ? 0 : 1 });
     if (dropMs) animateDrop(entry.pin, dropMs);
+    if (!decision.unclear) scene.addCritters({ row: where.row, col: where.col, id: decision.id });
     if (!decision.unclear) state.evidence.push(entry);
     state.cur = entry; place(entry, where); mn.stop();   // the map clicks now place this photo's pin
     const kind = memory.suggestKind(decision, await sceneAnswer(px));
@@ -344,7 +345,10 @@ function rebuildPins() {
     pin(`find:${f.i}`, { row: f.cell.row, col: f.cell.col, color: f.answered_or_unclear === 'unclear' ? PIN.unclear : PIN.wireworm });
   state.notes.forEach((n, i) => pin(`note:${i}`, { row: n.row, col: n.col, color: memory.noteLook(n).color }));
   const shown = state.cur && !state.evidence.includes(state.cur) ? [...state.evidence, state.cur] : state.evidence;
-  for (const e of shown) e.pin = scene.addPin({ row: e.cell.row, col: e.cell.col, thumb: e.thumb, color: PIN[e.effect.kind] });
+  for (const e of shown) {
+    e.pin = scene.addPin({ row: e.cell.row, col: e.cell.col, thumb: e.thumb, color: PIN[e.effect.kind] });
+    if (!e.decision.unclear) scene.addCritters({ row: e.cell.row, col: e.cell.col, id: e.decision.id });
+  }
 }
 
 const photoPending = () => !!(state.cur && state.current.kind === 'result');

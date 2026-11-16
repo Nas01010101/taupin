@@ -11,6 +11,7 @@
     "CRAAQ_SOY_N": "CRAAQ fertilization guide via La Terre de chez nous (2018): soybean 0 to 30 kg N/ha",
     "SOY_CREDIT": "CRAAQ 2010 soybean credit of 25 kg N/ha to the next crop, cited by N'Dayegamiye et al. 2012, Sustainable Agriculture Research 1(2):257, doi 10.5539/sar.v1n2p257 (they measured 31 to 42)",
     "CPVQ_CREDIT": "CPVQ residue credit table (Agri-Reseau feuillet 4B): grain corn 0, spring wheat 0, barley 0, oats 0",
+    "GAGNON_ROT": "Gagnon et al. 2019, Agronomy Journal 111(6), doi 10.2134/agronj2018.10.0653: on a Quebec clay soil, corn in rotation yielded 0.6 to 0.9 Mg/ha (mean 0.7) more than continuous or second-year corn, under plough and reduced tillage",
     "LAL_RATIO": "Lal 2005, World crop residues production and implications of its use as a biofuel, Environment International 31:575, residue to grain ratios (Lal 1995 column)",
     "CGQ_YIELD": "Concertation Grains Quebec (2025), mean Quebec yields 1981 to 2023",
     "OMAFRA_811_SOY": "OMAFRA Publication 811, Agronomy Guide for Field Crops (2022), ch. 2: if soil temperature and moisture conditions are suitable for planting corn, they are generally also suitable for soybeans",
@@ -30,6 +31,7 @@
       "n_need": [120, 170], "n_src": "CRAAQ_N",
       "n_credit_next": 0, "credit_src": "CPVQ_CREDIT",
       "yield_kg_ha": 7656, "yield_src": "CGQ_YIELD",
+      "after_same_penalty_kg_ha": 700, "after_same_src": "GAGNON_ROT",
       "residue_ratio": 1.0, "ratio_src": "LAL_RATIO"
     },
     "soybean": {

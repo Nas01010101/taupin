@@ -196,18 +196,19 @@ demo field on equal weights, fall plough, as `web/js/soilwater.js` computes them
 
 | Rotation | Dry-year water, mm | Heavy rain on bare soil, days in 5 years | USLE C | N to buy, kg/ha in 5 years | Residue, t/ha a year |
 |---|---|---|---|---|---|
-| Corn every year | 32 spare | 7 | 0.40 | 725 | 7.7 |
+| Corn every year | 32 spare | 7 | 0.40 | 725 | 7.0 |
 | Corn and soybean (current) | 18 short | 8.5 | 0.44 | 415 | 5.7 |
 | Corn, soybean, wheat | 47 short | 9.6 | 0.43 | 400 | 5.1 |
 | With buckwheat | 35 short, 1 year unknown | ? | 0.4 | ? | 5.7 |
 
-Corn every year ranks first on equal weights. That is the model's output, and it shows what the
-model leaves out:
+Corn right after corn now loses 700 kg/ha of yield and the residue that goes with it (Gagnon et al.
+2019, Quebec clay, `web/data/crops.json` source `GAGNON_ROT`); the first year looks at the last crop
+of the farmer's history. Corn every year still ranks first on equal weights. That is the model's
+output, and it shows what the model leaves out:
 
 | Gap | Effect on the ranking | Next step |
 |---|---|---|
 | Soil water stored at sowing is not counted | a crop sown early (wheat) looks drier than it is | FAO-56 Ch. 8 soil water balance started from SMAP or GWETROOT at sowing, with available water from the CanSIS soil tables |
-| No yield penalty for corn after corn | corn every year gets full residue and no yield loss | a sourced penalty from Quebec or Ontario trials applied to yield, residue and nitrogen |
 | No cover crops | wheat and soybean years keep bare soil after harvest | a cover crop option after wheat and soybean, with its USLE C and nitrogen effect |
 | USLE uses C only; K and LS of the field are not used | soil loss is compared, not estimated in t/ha | A = R K LS C P for the demo square from HRDEM slope and CanSIS texture; slope class from the farmer elsewhere |
 | Buckwheat has no FAO-56 coefficient, Quebec nitrogen rate or CGQ yield | its rotation ranks after the fully scored ones | find a measured coefficient and a CRAAQ rate; until then ? stays ? |

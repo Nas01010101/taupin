@@ -135,3 +135,18 @@ test('cards: the buckwheat then soybean warning is in the risks of the cards tha
   assert.equal(cards.filter(c => /Soybean right after buckwheat/.test(c)).length, 1);
   assert.ok(cards.find(c => /<h3>\d\. C</.test(c)).includes('Soybean right after buckwheat'));
 });
+
+test('corn right after corn loses the sourced yield and its residue (Gagnon et al. 2019)', () => {
+  const pen = crops.crops.corn.after_same_penalty_kg_ha, y0 = crops.crops.corn.yield_kg_ha;
+  assert.equal(pen, 700);
+  assert.ok(crops.sources[crops.crops.corn.after_same_src]);
+  const cc = rotationMetrics(['corn', 'corn', 'soybean', 'corn', 'corn'], { crops: {} }, crops, null);
+  assert.deepEqual(cc.years.map(y => y.yield), [y0, y0 - pen, crops.crops.soybean.yield_kg_ha, y0, y0 - pen]);
+  close(cc.years[1].residue, (y0 - pen) * crops.crops.corn.residue_ratio / 1000, 1e-9);
+  // the first year looks at the last crop of the farmer's history
+  const after = rotationMetrics(['corn', 'soybean'], { crops: {} }, crops, null, 'fall_plow', ['wheat', 'corn']);
+  assert.equal(after.years[0].yield, y0 - pen);
+  // corn every year now carries the penalty in four of five years
+  const ccc = rotationMetrics(['corn', 'corn', 'corn', 'corn', 'corn'], { crops: {} }, crops, null);
+  close(ccc.total.residue, (y0 + 4 * (y0 - pen)) / 5 * crops.crops.corn.residue_ratio / 1000, 1e-9);
+});

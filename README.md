@@ -2,6 +2,8 @@
 
 # Taupin
 
+English · [Français](README.fr.md)
+
 Taupin helps a grain farmer in Canada or the US and their agronomist scout a field for wireworms before buying
 insecticide-coated seed. It dates the bait-trap week from NASA POWER soil temperature, places the
 traps on a 3D field built from lidar, NASA HLS, Landsat and the soil map, takes the counts, names a
@@ -11,8 +13,8 @@ runs in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
-App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s
-with voice-over: [`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
+App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s:
+[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4); a 46 s cut with the photo model: [`docs/assets/demo-46s.mp4`](docs/assets/demo-46s.mp4).
 
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">
@@ -24,7 +26,7 @@ with voice-over: [`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
 ## Inputs
 
 - **Main input: satellite and NASA data.** GPM IMERG rain, SMAP L4 soil moisture, HLS (NASA Landsat and ESA Sentinel-2) and Landsat
-  vegetation and surface temperature, and NASA POWER (MERRA-2) soil temperature drive the 3D field
+  vegetation and surface temperature, the AAFC crop map (classified from Sentinel-2, Landsat and CSA RADARSAT Constellation radar), and NASA POWER (MERRA-2) soil temperature drive the 3D field
   layers, the field risk model (logistic, 4 inputs, fitted on 82 Quebec fields from Labrie et al.
   2020, leave-one-field-out AUC 0.80) and the rotation scores.
 - **Extra input: phone photos.** The photo model is DINOv2-S (Meta, Apache-2.0) with an 8-class head,
@@ -52,7 +54,7 @@ The field rank was fitted on Quebec fields; where an input falls outside that ra
 and the rank is an extrapolation. The 3D terrain (NRCan lidar) and the soil map are one Quebec field.
 
 Next: trap counts from Ontario, the Prairies and the US to refit the rank per region, USGS 3DEP lidar
-for US fields, Canadian Space Agency RADARSAT Constellation soil moisture (being added), then any country with trap
+for US fields, Canadian Space Agency RADARSAT Constellation soil moisture as a direct layer, then any country with trap
 counts, soil maps and terrain.
 
 ## Two audiences
@@ -332,6 +334,10 @@ Gallery photos (Wikimedia Commons):
 ```
 
 Cite the data sources above as well, in particular NASA POWER, NASA HLS and Labrie et al. 2020.
+
+## Field outing
+
+Photos from the team's outing are in [udem-ai-in-nature](udem-ai-in-nature/).
 
 ## AI assistance
 
