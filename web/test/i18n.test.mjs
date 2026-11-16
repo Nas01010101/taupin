@@ -14,8 +14,8 @@ test('language order: URL param, stored choice, browser language, English', () =
   assert.equal(pickLang('?lang=fr', 'en', 'en-US'), 'fr');
   assert.equal(pickLang('?lang=en', 'fr', 'fr-CA'), 'en');
   assert.equal(pickLang('', 'fr', 'en-US'), 'fr');
-  assert.equal(pickLang('', null, 'fr-CA'), 'fr');
-  assert.equal(pickLang('', 'de', 'FR'), 'fr');
+  assert.equal(pickLang('', null, 'fr-CA'), 'en');
+  assert.equal(pickLang('', 'de', 'FR'), 'en');
   assert.equal(pickLang('?lang=de', null, 'en-CA'), 'en');
   assert.equal(pickLang(), 'en');
 });

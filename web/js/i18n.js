@@ -14,11 +14,12 @@ export const misses = new Set();
 const SOURCE = /NASA|HLS|SMAP|IMERG|doi:|et al\.|USGS|FAO-56|OMAFRA|CanSIS|IRDA|Landsat|Sentinel|MERRA|HRDEM|OpenStreetMap|Agri-R|CC BY|CC0|Public domain|Bugwood|USDA|Terres Noires|Dorval|CRAAQ|MAPAQ,|Concertation|Lal 2|Code de gestion|Entomol|Alexandria|AAFC Annual Crop/;
 const note = (s) => { if (/[A-Za-z]{4,}/.test(s) && !SOURCE.test(s)) misses.add(s); };
 
-export function pickLang(search = '', stored = null, navLang = '') {
+// English unless the URL or the visitor's own FR/EN toggle asks for French; the browser language is
+// ignored so a French-language browser still opens the site in English.
+export function pickLang(search = '', stored = null) {
   const q = new URLSearchParams(search).get('lang');
   if (q === 'fr' || q === 'en') return q;
-  if (stored === 'fr' || stored === 'en') return stored;
-  return /^fr/i.test(navLang || '') ? 'fr' : 'en';
+  return stored === 'fr' ? 'fr' : 'en';
 }
 
 const sub = (g) => {
@@ -126,7 +127,7 @@ const ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
 function start() {
   let stored = null;
   try { stored = localStorage.getItem('taupin-lang'); } catch { /* storage blocked */ }
-  const lang = pickLang(location.search, stored, navigator.language);
+  const lang = pickLang(location.search, stored);
   const html = document.documentElement;
   html.lang = lang;
   const btn = document.getElementById('lang');
