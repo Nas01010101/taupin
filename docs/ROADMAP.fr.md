@@ -4,7 +4,7 @@
 
 État au 2026-11-15. Ce fichier énumère ce que Taupin doit devenir, ce qui existe aujourd'hui, l'écart
 entre les deux et le travail à faire, dans l'ordre. Il accompagne `docs/PROJECT.md` (état actuel et
-lacunes de la version du hackathon) et `docs/PREDICTIONS.md` (suivi des prédictions, affirmation par affirmation).
+lacunes de la version du hackathon).
 
 ## 1. Ce que Taupin doit devenir
 

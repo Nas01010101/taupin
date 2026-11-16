@@ -18,7 +18,7 @@ export const DICT = {
 
   // Step navigation
   'Your field.': 'Votre champ.',
-  'Type its position or use this device\'s.': 'Entrez sa position ou utilisez celle de cet appareil.',
+  'Tap it on a map or use this device\'s position.': 'Touchez-le sur une carte ou utilisez la position de cet appareil.',
   'Trap week.': 'Semaine de piégeage.',
   'The week the soil reaches 12 °C, from NASA data.': 'La semaine où le sol atteint 12 °C, d\'après les données de la NASA.',
   'Where to trap.': 'Où piéger.',
@@ -137,7 +137,6 @@ export const DICT = {
   'Back to the demo field': 'Retour au champ de démonstration',
   'Asking NASA POWER…': 'Interrogation de NASA POWER…',
   'Reading the position…': 'Lecture de la position…',
-  'Montérégie, QC': 'Montérégie, QC',
   'Prince Edward Island': 'Île-du-Prince-Édouard',
   'Story County, Iowa': 'Comté de Story, Iowa',
   'Montérégie, Quebec': 'Montérégie, Québec',
@@ -154,7 +153,7 @@ export const DICT = {
   'the soil here does not reach 12 °C in spring in enough years': 'le sol de cet endroit n\'atteint pas 12 °C au printemps assez souvent',
 
   // Step 2 and the pest table
-  'When to set bait traps': 'Quand installer les pièges-appâts',
+  '2. When to set bait traps': '2. Quand installer les pièges-appâts',
   'Bait traps': 'Pièges-appâts',
   'Larvae move up': 'Remontée des larves',
   'Rootworm hatch': 'Éclosion des chrysomèles',

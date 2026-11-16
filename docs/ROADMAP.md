@@ -4,7 +4,7 @@ English · [Français](ROADMAP.fr.md)
 
 State on 2026-11-15. This file lists what Taupin is meant to become, what exists today, the gap
 between the two, and the work in order. It sits next to `docs/PROJECT.md` (current state and
-gaps of the hackathon build) and `docs/PREDICTIONS.md` (claim-by-claim prediction tracks).
+gaps of the hackathon build).
 
 ## 1. What Taupin is meant to be
 

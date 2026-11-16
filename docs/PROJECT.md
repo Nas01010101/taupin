@@ -57,23 +57,22 @@ open complement, not a stronger predictor.
 
 ## What exists today
 
-| Part | State | Evidence |
-|---|---|---|
-| Web app (risk table, photo classification in the browser, offline) | on `main` | `web/`, `tests/test_web.py` |
-| 3D field from lidar, HLS, Landsat and the soil map, with scouting zones and trap points | on `build` | `src/taupin/layers.py`, `web/js/scene.js`, `tests/test_layers.py` |
-| Count sheet, trap files (GPX, CSV, GeoJSON), agronomist record, lab route | on `build` | `web/js/scout.js`, `web/test/scout.test.mjs` |
-| Rule engine for wireworm and corn rootworm | on `main` | `src/taupin/engine.py`, `tests/test_engine.py` |
-| Trap date from NASA POWER soil temperature | on `main` | `src/taupin/bake.py`: mean 14 May over 1995 to 2025, 8 May in 2025 |
-| Photo classifier v2 (DINOv2-S, 8 classes, ONNX, 23 MB) | on `build` (v1 on `main`) | `model/metrics.json`, `model/MODEL_CARD.md` |
-| Field risk model fitted on Quebec bait-trap fields | on `build` | `risk/`, `risk/model/metrics.json`, `tests/test_risk.py` |
-| Launchers for macOS, Windows and Linux | on `main` | `run.command`, `run.bat`, `run.sh` |
-| Pitch deck | 7 slides, published as a web page | shared as "anyone with the link"; open it once in a private window before submission |
-| Trap dates and field ranking for any coordinates | on `build` | `web/js/power.js`, `web/test/power.test.mjs` |
-| Six-step farmer flow on the first screen; model numbers under "Details" | on `claude/two-versions` | `web/index.html`, `web/app.css` |
-| Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | on `claude/two-versions` | `web/js/finds.js`, `web/test/finds.test.mjs` |
-| Research outline and challenge fit | on `claude/two-versions` | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
-| Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | on `soil-water` | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
-| GPM IMERG daily rain and SMAP L4 soil moisture | on `soil-water` | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
+| Part | Code |
+|---|---|
+| Web app (risk table, photo classification in the browser, offline) | `web/`, `tests/test_web.py` |
+| 3D field from lidar, HLS, Landsat and the soil map, with scouting zones and trap points | `src/taupin/layers.py`, `web/js/scene.js`, `tests/test_layers.py` |
+| Count sheet, trap files (GPX, CSV, GeoJSON), agronomist record, lab route | `web/js/scout.js`, `web/test/scout.test.mjs` |
+| Rule engine for wireworm and corn rootworm | `src/taupin/engine.py`, `tests/test_engine.py` |
+| Trap date from NASA POWER soil temperature | `src/taupin/bake.py`: mean 14 May over 1995 to 2025, 8 May in 2025 |
+| Photo classifier v2 (DINOv2-S, 8 classes, ONNX, 23 MB) | `model/metrics.json`, `model/MODEL_CARD.md` |
+| Field risk model fitted on Quebec bait-trap fields | `risk/`, `risk/model/metrics.json`, `tests/test_risk.py` |
+| Launchers for macOS, Windows and Linux | `run.command`, `run.bat`, `run.sh` |
+| Trap dates and field ranking for any coordinates | `web/js/power.js`, `web/test/power.test.mjs` |
+| Six-step farmer flow on the first screen; model numbers under "Details" | `web/index.html`, `web/app.css` |
+| Photo finds logged with a position on the device, pins, CSV and GeoJSON export, in the record | `web/js/finds.js`, `web/test/finds.test.mjs` |
+| Research outline and challenge fit | `docs/RESEARCH.md`, `docs/CHALLENGE_FIT.md` |
+| Seven rotations scored on dry-year water, bare-soil heavy rain, USLE cover, nitrogen, residue and pests; farmer priorities; why, evidence, gaps and risks per rotation | `web/js/soilwater.js`, `web/js/swui.js`, `web/data/crops.json`, `web/data/rotations.json`, `web/test/soilwater.test.mjs` |
+| GPM IMERG daily rain and SMAP L4 soil moisture | `src/taupin/weather.py`, `src/taupin/smap.py`, `tests/test_soilwater_bake.py` |
 
 ## Data
 

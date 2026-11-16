@@ -18,8 +18,8 @@ in the browser, offline; photos and counts never leave the device.
 
 Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
 
-App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s:
-[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4); a 46 s cut with the photo model: [`docs/assets/demo-46s.mp4`](docs/assets/demo-46s.mp4).
+App: https://nas01010101.github.io/taupin/ (English, French with `?lang=fr`). Demo video, 30 s: https://youtu.be/k4BG-ckcc1k, also in
+[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
 
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Demo: a photo is classified, pinned on the 3D field, and the risk table shows what it changes">

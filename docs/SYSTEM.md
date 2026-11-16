@@ -8,10 +8,10 @@ soil moisture and HLS plant cover. SoilGrids gives organic matter worldwide. Que
 field. The farmer's photos and notes come second and change the comparison for that field. The farmer
 and the agronomist make the decision.
 
-Any point on the map: "Pick your field on a map" builds the field in about 6 s (`web/js/picker.js`,
+Any point on the map: "Pick your field on a map" builds the field in about 8 s (`web/js/picker.js`,
 `web/js/build.js`) and keeps it on the device; `?field=mine` opens it.
 
-The demo video (`docs/assets/`, 40 s and 90 s cuts) shows the steps below. Each row names the part of
+The demo video (https://youtu.be/k4BG-ckcc1k, `docs/assets/demo-30s.mp4`) shows the steps below. Each row names the part of
 the repo that does it.
 
 | Video scene | What the app does | Code |

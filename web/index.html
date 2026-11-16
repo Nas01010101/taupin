@@ -48,9 +48,9 @@
 <p id="fatal" class="bad" hidden></p>
 <nav class="flow" aria-labelledby="h-flow">
   <h2 id="h-flow">Six steps for one field</h2>
-  <p class="lede">Since 1 August 2025, coated seed in Quebec needs an agronomist's prescription. A bait-trap count shows whether your field needs it.</p>
+  <p class="lede">A bait-trap count shows whether a field needs insecticide-coated seed. In Quebec, that seed has needed an agronomist's prescription since 1 August 2025.</p>
   <ol>
-    <li><a href="#sec-own"><strong>Your field.</strong> Type its position or use this device's.</a></li>
+    <li><a href="#sec-own"><strong>Your field.</strong> Tap it on a map or use this device's position.</a></li>
     <li><a href="#sec-trap"><strong>Trap week.</strong> The week the soil reaches 12 °C, from NASA data.</a></li>
     <li><a href="#sec-traps"><strong>Where to trap.</strong> Ten trap points on the 3D field.</a></li>
     <li><a href="#h-counts"><strong>Enter counts.</strong> Wireworms per trap, against the threshold.</a></li>
@@ -99,7 +99,7 @@
       <div class="pick-wrap">
         <button type="button" id="pick-open" class="pick-btn">Pick your field on a map</button>
         <div id="pick" hidden>
-          <p class="small">Zoom to your farm and tap inside your field. Colours show last year's crops (AAFC crop inventory, Canada). The square is what will be modelled.</p>
+          <p class="small">Zoom to your farm and tap inside your field. In Canada, colours show last year's crops (AAFC crop inventory). The square is what will be modelled.</p>
           <div id="pick-map" class="pick-map" role="application" aria-label="Map: tap your field"></div>
           <div class="own-btn">
             <button type="button" id="pick-build" class="pick-btn" disabled>Build my 3D field here</button>
@@ -121,20 +121,11 @@
       </form>
       <p class="small">Quebec fields modelled in 3D from HRDEM lidar, HLS and Landsat, IRDA soil maps and the AAFC crop inventory:</p>
       <div class="zones" id="fields"></div>
-      <p class="small">Or try a farm region. NASA POWER covers all of North America; the field rank was fitted on Quebec fields, so the page says when an input is outside that range.</p>
-      <div class="zones" id="regions">
-        <button type="button" class="seg" data-lat="45.63" data-lon="-72.96">Montérégie, QC</button>
-        <button type="button" class="seg" data-lat="42.40" data-lon="-82.18">Chatham-Kent, ON</button>
-        <button type="button" class="seg" data-lat="46.35" data-lon="-63.30">Prince Edward Island</button>
-        <button type="button" class="seg" data-lat="52.13" data-lon="-106.67">Saskatoon, SK</button>
-        <button type="button" class="seg" data-lat="42.03" data-lon="-93.62">Story County, Iowa</button>
-        <button type="button" class="seg" data-lat="42.56" data-lon="-114.46">Magic Valley, Idaho</button>
-      </div>
       <p id="own-status" class="small" aria-live="polite"></p>
     </section>
 
     <section id="sec-trap" aria-labelledby="h-trap">
-      <h2 id="h-trap">When to set bait traps</h2>
+      <h2 id="h-trap">2. When to set bait traps</h2>
       <p class="lede" id="trap-lede"></p>
       <div id="trap"></div>
     </section>

@@ -555,7 +555,6 @@ function bind() {
     navigator.geolocation.getCurrentPosition(p => { centerPicker($('#pick'), { lat: p.coords.latitude, lon: p.coords.longitude }, 16); $('#pick-status').textContent = 'Tap inside your field.'; },
       () => { $('#pick-status').textContent = 'No position from this device. Zoom the map by hand.'; }, { enableHighAccuracy: true, timeout: 15000 });
   });
-  $('#regions').addEventListener('click', e => { const b = e.target.closest('button[data-lat]'); if (b) loadOwn(parseCoords(b.dataset.lat, b.dataset.lon)); });
   $('#own-here').addEventListener('click', () => {
     if (!navigator.geolocation) { $('#own-status').textContent = 'This browser gives no position. Type the coordinates.'; return; }
     navigator.geolocation.getCurrentPosition(p => loadOwn(parseCoords(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))),

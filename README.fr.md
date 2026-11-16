@@ -4,21 +4,27 @@
 
 # Taupin
 
-Taupin aide un producteur de grains du Canada ou des États-Unis et son agronome à dépister les vers
-fil-de-fer dans un champ avant d'acheter des semences enrobées d'insecticide. Il date la semaine de
-pose des pièges-appâts à partir de la température du sol de NASA POWER, place les pièges sur un champ
-en 3D construit à partir du lidar, de NASA HLS, de Landsat et de la carte des sols, enregistre les
-dénombrements, nomme un insecte du sol à partir d'une photo, et compare sept rotations de cultures sur
-cinq ans pour l'eau, la perte de sol, l'azote, les résidus de culture et les ravageurs, avec la pluie
-NASA GPM et l'humidité du sol SMAP. Il fonctionne dans le navigateur, hors ligne ; les photos et les
-dénombrements ne quittent jamais l'appareil.
+Taupin permet aux producteurs de partout de modéliser leur champ en 3D et de comparer sept rotations
+de cultures sur cinq ans. Le champ est construit dans le navigateur à partir de données d'altitude :
+le lidar national là où il existe (HRDEM de RNCan au Canada), des tuiles de terrain mondiales
+ailleurs. Les données de la NASA passent en premier : la pluie GPM IMERG et la température du sol
+NASA POWER (MERRA-2) par POWER, l'humidité du sol de la zone racinaire SMAP L4 et le couvert végétal
+HLS. SoilGrids donne la matière organique du sol partout dans le monde. Le Québec sert de champ
+d'exemple : le carré de démonstration, trois champs agricoles préparés et les données
+d'entraînement du modèle de risque des vers fil-de-fer s'y trouvent.
+
+Un modèle de photo dans le navigateur (DINOv2-S, 8 classes d'insectes du sol) épingle les trouvailles
+sur le champ en 3D et reclasse les rotations, ou envoie une photo incertaine au laboratoire. La même
+page date la semaine de pose des pièges-appâts, place dix pièges et enregistre les dénombrements
+avant qu'un producteur achète des semences enrobées d'insecticide. Elle fonctionne dans le
+navigateur, hors ligne ; les photos et les dénombrements ne quittent jamais l'appareil.
 
 Conçu pour NASA Space Apps 2026. Taupin est le nom français du coléoptère taupin et de sa larve, le
 ver fil-de-fer.
 
 Application : https://nas01010101.github.io/taupin/ (anglais, français avec `?lang=fr`). Vidéo de
-démonstration, 30 s :
-[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4) ; une version de 46 s avec le modèle de photo : [`docs/assets/demo-46s.mp4`](docs/assets/demo-46s.mp4).
+démonstration, 30 s : https://youtu.be/k4BG-ckcc1k, aussi dans
+[`docs/assets/demo-30s.mp4`](docs/assets/demo-30s.mp4).
 
 <p align="center">
 <img src="docs/assets/demo.gif" width="49%" alt="Démonstration : une photo est classée, épinglée sur le champ en 3D, et le tableau de risque montre ce qu'elle change">
@@ -329,7 +335,7 @@ Photos de la galerie (Wikimedia Commons) :
 
 ```bibtex
 @software{taupin2026,
-  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for a Quebec field},
+  title = {Taupin: bait-trap dates, trap points, counts, photo triage and rotation risk for any field},
   author = {{Taupin contributors}},
   year  = {2026},
   url   = {https://github.com/Nas01010101/taupin},
