@@ -3,8 +3,8 @@
 `python -m taupin.engine_parity` writes web/test/fixtures/engine_parity.json; tests/test_engine_parity.py
 checks the committed file still equals what the engine gives, and web/test/engine.test.mjs checks
 the JavaScript port gives the same. Two parts:
-- every 5-year sequence of the crops the soil and water columns know (web/data/crops.json), in both
-  zones, as compact levels;
+- every 5-year sequence of the crops the soil and water columns know (web/data/crops.json), one crop
+  per engine class (barley and oats score as wheat, canola as soybean), in both zones, as compact levels;
 - 80 seeded cases over all engine crops, soils, histories, sod years and trap means, with traces.
 """
 import itertools
@@ -25,8 +25,18 @@ def _compact(rows) -> str:
     return " ".join(f"{r.wireworm[0]}/{r.corn_rootworm[0]}/{int(r.prescription_supportable)}" for r in rows)
 
 
+def _engine_class(crop: str) -> tuple:
+    """What the engine looks at in a crop name; two crops with the same class score the same."""
+    return (crop in engine.GRASS, crop in engine.PRESCRIPTION_CROPS, crop == "corn", crop == "buckwheat")
+
+
 def cases() -> dict:
-    crops = sorted(json.loads((ROOT / "web" / "data" / "crops.json").read_text())["crops"])
+    known = json.loads((ROOT / "web" / "data" / "crops.json").read_text())["crops"]
+    # First crop of each engine class in crops.json order (corn, soybean, wheat, ..., buckwheat).
+    reps = {}
+    for c in known:
+        reps.setdefault(_engine_class(c), c)
+    crops = sorted(reps.values())
     exhaustive = []
     for zk, z in bake.ZONES.items():
         for seq in itertools.product(crops, repeat=5):

@@ -1,6 +1,6 @@
 // Offline copy of the app. Network first so a running server always wins, then the cache, so
 // the installed app opens with no network. Bump CACHE when vendor/ or the shell changes.
-const CACHE = 'taupin-v19';
+const CACHE = 'taupin-v20';
 const SHELL = [
   './', 'index.html', 'app.css', 'nasa.css', 'img/hero.jpg', 'manifest.webmanifest',
   'js/i18n.js', 'js/i18n-fr.js', 'js/i18n-fr-text.js', 'js/i18n-fr-pat.js', 'js/i18n-fr-pat2.js', 'js/i18n-fr-post.js',

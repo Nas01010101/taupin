@@ -188,7 +188,9 @@ function renderSoilWater(view) {
   const impact = fx.weights.soil ? memory.notesImpact(rots, o.chosen, fx.weights) : [];
   $('#sw-notes').innerHTML = memoryui.impactHTML({ fx, chosen: o.chosen, impact, names, cover: Object.fromEntries(ids.map(id => [id, byId[id].total.c])) });
   $('#sw-table').innerHTML = sw.tableHTML(ranked, byId, names, o.current, impact.length && o.chosen.includes('soil') ? Object.fromEntries(impact.map(r => [r.id, r])) : null);
-  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen });
+  // The crop before 2026 (farmer's history, else the baked record, else the default start) counts for the rotation conflicts.
+  const prior = histStart()?.prior ?? D.risk.history?.prior ?? D.risk.rules?.default_prior ?? [];
+  $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen, prior });
   $('#sw-how').innerHTML = sw.climateHTML(clim, D.crops, D.weather, state.own ? coordText(state.own) : D.field.site.name);
 }
 

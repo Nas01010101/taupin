@@ -237,9 +237,23 @@ export function gaps(cropIds, cropData) {
     for (const [k, label] of [['kc', 'water use (Kc)'], ['stages', 'season length'], ['n_need', 'nitrogen need'], ['n_credit_next', 'nitrogen left for the next crop'], ['yield_kg_ha', 'Quebec yield'], ['residue_ratio', 'residue ratio']]) {
       if (c[k] == null) out.add(`${c.name}: no sourced ${label}`);
     }
-    for (const k of ['kc_note', 'plant_note', 'usle_note']) if (c[k] && /assum/i.test(c[k])) out.add(`${c.name}: ${c[k]}`);
+    for (const k of ['kc_note', 'plant_note', 'usle_note', 'n_note', 'ratio_note']) if (c[k] && /assum/i.test(c[k])) out.add(`${c.name}: ${c[k]}`);
   }
   return [...out];
+}
+
+// Sourced pairs of crops that should not follow each other (crops.json `rotation_conflicts`), for the
+// risks of a card. `prior`: the crops before the plan, so the farmer's last history year counts too.
+export function conflicts(cropIds, cropData, prior = []) {
+  const name = id => cropData.crops[id]?.name ?? id, seq = [...prior.slice(-1), ...cropIds], out = [];
+  for (const r of cropData.rotation_conflicts ?? []) {
+    for (let i = 1; i < seq.length; i++) {
+      if (seq[i - 1] !== r.after || !r.crops.includes(seq[i])) continue;
+      const text = `${name(seq[i])} right after ${name(r.after).toLowerCase()}: ${r.why} [${cropData.sources[r.src] ?? r.src}]`;
+      if (!out.includes(text)) out.push(text);
+    }
+  }
+  return out;
 }
 
 export function doyDate(doy, year = 2025) { return iso(new Date(Date.UTC(year, 0, doy))); }

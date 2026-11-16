@@ -11,6 +11,20 @@ const memStore = () => { const m = new Map(); return { getItem: k => m.get(k) ??
 
 test('the crops offered are the ones with soil and water values', () => {
   assert.deepEqual(pickable(crops).map(c => c.id), Object.keys(crops.crops));
+  for (const id of ['barley', 'oat', 'canola']) assert.ok(pickable(crops).some(c => c.id === id), id);
+});
+
+test('a farmer rotation with the researched crops is scored by the engine like the presets', () => {
+  const R = makeRules(risk), seq = ['barley', 'canola', 'oat', 'soybean', 'corn'];
+  const { list } = addCustom([], seq, '', crops);
+  assert.equal(list[0].crops.join(), seq.join());
+  const { baseline } = scenariosFor(risk, R, 'upland', seq);
+  assert.deepEqual(baseline.map(y => y.crop), seq);
+  // Barley and oats are grass hosts and coated-seed crops, canola a coated-seed crop; rootworm only on corn.
+  assert.deepEqual(baseline.map(y => y.corn_rootworm), ['NONE', 'NONE', 'NONE', 'NONE', 'LOW']);
+  const v = riskView(risk, 'upland', [], { U1: { name: 'x', custom: true, scenarios: scenariosFor(risk, R, 'upland', seq) } });
+  const t = customText(list[0], v.rows.find(r => r.rotation === 'U1'), crops);
+  assert.match(t.why, /Barley, Canola, Oats, Soybean, Grain corn/);
 });
 
 test('adding, refusing, removing and keeping rotations on the device', () => {

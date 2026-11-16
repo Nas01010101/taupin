@@ -8,7 +8,7 @@ const MON = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?
 const DATE = `(?:\\d{1,2} ${MON}(?: \\d{4})?|${MON} \\d{1,2})`;
 const ISO = '\\d{4}-\\d{2}-\\d{2}';
 const NUM = '(\\d[\\d.,]*)';
-const CROP = { corn: 'le maïs', soybean: 'le soya', wheat: 'le blé', buckwheat: 'le sarrasin' };
+const CROP = { corn: 'le maïs', soybean: 'le soya', wheat: 'le blé', buckwheat: 'le sarrasin', barley: 'l’orge', oat: 'l’avoine', canola: 'le canola' };
 
 export const PATTERNS = [
   // Trap week and trap plan
@@ -62,7 +62,9 @@ export const PATTERNS = [
     }[m[2]];
     return what ? `${sub(m[1])}: ${what}` : null;
   }],
-  [/^(Buckwheat|Soybean|Corn|Wheat): (assumption: .+|the initial value .+)$/, '$1: $2'],
+  [/^(Buckwheat|Soybean|Corn|Wheat|Barley|Oats|Canola): (assumption: .+|the initial value .+)$/, '$1: $2'],
+  [/^(Soybean|Canola) right after buckwheat: (.+) \[(.+)\]$/, (m, sub) =>
+    `${sub(m[1])} juste après le sarrasin: ${sub(m[2])} [${m[3]}]`],
 
   // Rotation comparison sentences
   [new RegExp(`^${NUM} mm (less|more) water short per year in a dry year$`), (m) =>

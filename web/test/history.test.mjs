@@ -83,3 +83,9 @@ test('the history text reads in French', async () => {
   assert.match(fr('2025: Soybean (entered by the farmer; the satellite map said Corn)'), /^2025 ?: Soya \(entré par l[’']agriculteur; la carte satellite indiquait Maïs\)$/);
   assert.match(fr('satellite map, 62 %'), /^carte satellite, 62 %$/);
 });
+
+test('the crops the farmer can enter have soil and water values, except rye, hay or pasture and "other"', async () => {
+  const { PAST_CROPS } = await import('../js/history.js');
+  const crops = json('crops.json');
+  assert.deepEqual(PAST_CROPS.filter(c => !crops.crops[c]), ['rye', 'sod', 'other']);
+});

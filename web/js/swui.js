@@ -2,10 +2,10 @@
 // (why, evidence, benefits against the current rotation, information gaps, risks). Pure functions
 // of the computed metrics; every file-derived string goes through esc().
 import { esc } from './ui.js';
-import { PRIORITIES, versus, gaps } from './soilwater.js';
+import { PRIORITIES, versus, gaps, conflicts } from './soilwater.js';
 
 export const TILLAGE = { fall_plow: 'Fall plough', spring_plow: 'Spring plough', mulch: 'Mulch tillage', no_till: 'No-till' };
-const CROP = { corn: 'Corn', soybean: 'Soybean', wheat: 'Wheat', buckwheat: 'Buckwheat' };
+const CROP = { corn: 'Corn', soybean: 'Soybean', wheat: 'Wheat', barley: 'Barley', oat: 'Oats', canola: 'Canola', buckwheat: 'Buckwheat' };
 const day = doy => new Date(Date.UTC(2025, 0, doy)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 export function controlsHTML({ names, current, chosen, tillage }) {
@@ -54,7 +54,7 @@ export function tableHTML(ranked, byId, names, current, impact = null) {
 const li = xs => xs.map(x => `<li>${esc(x)}</li>`).join('');
 
 // One card per rotation, in rank order.
-export function cardsHTML(ranked, byId, { names, texts, current, cropData, sequences, chosen }) {
+export function cardsHTML(ranked, byId, { names, texts, current, cropData, sequences, chosen, prior = [] }) {
   const cur = byId[current];
   return ranked.map(r => {
     const m = byId[r.id], t = texts[r.id] ?? {}, isCur = r.id === current;
@@ -73,7 +73,7 @@ export function cardsHTML(ranked, byId, { names, texts, current, cropData, seque
 ${isCur ? '<p class="muted">The rotation the others are compared with.</p>'
     : `${good.length ? `<ul class="good">${li(good)}</ul>` : ''}${bad.length ? `<ul class="bad">${li(bad)}</ul>` : ''}${vs.length ? '' : '<p class="muted">No difference on the computed columns.</p>'}`}
 <h4>Information gaps</h4><ul>${li(gapList)}</ul>
-<h4>Risks</h4><ul>${li(t.risks ?? [])}</ul>
+<h4>Risks</h4><ul>${li([...conflicts(sequences[r.id], cropData, prior), ...(t.risks ?? [])])}</ul>
 </article>`;
   }).join('');
 }
