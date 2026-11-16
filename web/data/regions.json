@@ -11,7 +11,7 @@
     1995,
     2026
    ],
-   "trend_days_per_decade": 0.49,
+   "trend_days_per_decade": 0.5,
    "rank_year": 2026,
    "rank": "low",
    "outside_training": [],
@@ -25,12 +25,12 @@
    "name": "Chatham-Kent, Ontario",
    "lat": 42.4,
    "lon": -82.18,
-   "trap_week": "30 Apr",
+   "trap_week": "29 Apr",
    "trap_years": [
     1995,
     2026
    ],
-   "trend_days_per_decade": -3.14,
+   "trend_days_per_decade": -3.12,
    "rank_year": 2026,
    "rank": "low",
    "outside_training": [],
@@ -49,7 +49,7 @@
     1995,
     2026
    ],
-   "trend_days_per_decade": -0.46,
+   "trend_days_per_decade": -0.45,
    "rank_year": 2026,
    "rank": "low",
    "outside_training": [],
@@ -68,7 +68,7 @@
     1995,
     2026
    ],
-   "trend_days_per_decade": -3.26,
+   "trend_days_per_decade": -3.24,
    "rank_year": 2026,
    "rank": "high",
    "outside_training": [
@@ -84,12 +84,12 @@
    "name": "Story County, Iowa",
    "lat": 42.03,
    "lon": -93.62,
-   "trap_week": "23 Apr",
+   "trap_week": "22 Apr",
    "trap_years": [
     1995,
     2026
    ],
-   "trend_days_per_decade": -3.24,
+   "trend_days_per_decade": -3.22,
    "rank_year": 2026,
    "rank": "high",
    "outside_training": [
@@ -110,7 +110,7 @@
     1995,
     2026
    ],
-   "trend_days_per_decade": -4.96,
+   "trend_days_per_decade": -4.95,
    "rank_year": 2026,
    "rank": "low",
    "outside_training": [

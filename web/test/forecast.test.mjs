@@ -90,4 +90,12 @@ test('demo field: the trap-date range holds on misses it was not built from, clo
   const share = t.check.inside / t.check.n;
   assert.ok(share >= 0.7 && share <= 0.9, `held ${share}`);   // the bar in docs/PREDICTIONS.md
   assert.match(trapHTML(trapWindow(soil, 2026), soil, []), /the range held 61 of 70 times \(87 %\)/);
+
+
+test('leap years do not shift the forecast: the same calendar date every year forecasts that date exactly', () => {
+  const per_year = {};
+  for (let y = 2000; y <= 2025; y++) per_year[y] = { trap_12C: `${y}-05-14` };   // seven leap years among them
+  const r = trapForecast({ per_year }, 2026).trap_12C.rows[0];
+  assert.deepEqual(r.doy, [134, 134, 134]);   // with the calendar day of year, leap years would read 135
+  assert.deepEqual([r.date, r.lo, r.hi], ['14 May', '14 May', '14 May']);
 });

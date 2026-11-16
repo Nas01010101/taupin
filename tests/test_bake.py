@@ -81,3 +81,10 @@ def test_committed_field_risk_json_matches_crop_history():
         fj = json.loads((WEB_DATA / "fields" / f["id"] / "field.json").read_text(encoding="utf-8"))
         committed = json.loads((WEB_DATA / "fields" / f["id"] / "risk.json").read_text(encoding="utf-8"))
         assert committed == json.loads(json.dumps(bake.risk_matrix(bake.field_history(fj["crops"])))), f["id"]
+
+
+def test_committed_soil_json_date_stats_match_its_own_years():
+    # Means and trend in the file must be the ones soil.date_stats gives for its per-year dates.
+    from taupin import soil
+    s = json.loads((WEB_DATA / "soil.json").read_text())
+    assert {k: s[k] for k in soil.date_stats(s["per_year"])} == soil.date_stats(s["per_year"])
