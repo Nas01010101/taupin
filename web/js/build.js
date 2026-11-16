@@ -139,9 +139,11 @@ async function cropMaps(grid, fetchFn, decodePNG, step) {
   step('Reading the crop maps, 2011 to 2025 (AAFC)…');
   const maps = {};
   let bytes = 0;
+  // A year the service does not answer within 20 s is skipped, so a slow AAFC never stalls the build.
   await Promise.all(ACI_YEARS.map(async y => {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
     try {
-      const r = await fetchFn(aciURL(y, grid.bbox, CROP_N));
+      const r = await fetchFn(aciURL(y, grid.bbox, CROP_N), { signal: ctl.signal });
       if (!r.ok || !String(r.headers?.get?.('content-type') ?? 'image/png').includes('png')) return;
       const buf = await r.arrayBuffer(); bytes += buf.byteLength;
       const img = await decodePNG(buf);
@@ -149,7 +151,7 @@ async function cropMaps(grid, fetchFn, decodePNG, step) {
       // Class codes stop at 230; the service answers 253 (no data) outside Canada.
       const codes = Uint8Array.from({ length: CROP_N * CROP_N }, (_, i) => (img.data[i * 4] < 250 ? img.data[i * 4] : 0));
       if (codes.some(c => c > 0)) maps[y] = codes;
-    } catch { /* that year is skipped */ }
+    } catch { /* that year is skipped */ } finally { clearTimeout(timer); }
   }));
   return { maps, bytes };
 }

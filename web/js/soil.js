@@ -29,10 +29,12 @@ export function parseSDA(json) {
 }
 
 // Soil under (lat, lon), or null outside SSURGO coverage. Never throws: soil is a preset, not a need.
-export async function soilAt(lat, lon, fetchFn = fetch) {
+// The service can take long to answer outside its coverage, so it gets 8 s.
+export async function soilAt(lat, lon, fetchFn = fetch, ms = 8000) {
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
   try {
-    const r = await fetchFn(SDA_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await fetchFn(SDA_URL, { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ format: 'JSON+COLUMNNAME', query: sdaQuery(lat, lon) }) });
     return r.ok ? parseSDA(await r.json()) : null;
-  } catch { return null; }
+  } catch { return null; } finally { clearTimeout(timer); }
 }
