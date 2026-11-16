@@ -8,7 +8,7 @@ soil moisture and HLS plant cover. SoilGrids gives organic matter worldwide. Que
 field. The farmer's photos and notes come second and change the comparison for that field. The farmer
 and the agronomist make the decision.
 
-Any point on the map: "Pick your field on a map" builds the field in about 8 s (`web/js/picker.js`,
+Any point on the map: "Pick your field on a map" builds the field in about 6 s (`web/js/picker.js`,
 `web/js/build.js`) and keeps it on the device; `?field=mine` opens it.
 
 The demo video (https://youtu.be/k4BG-ckcc1k, `docs/assets/demo-30s.mp4`) shows the steps below. Each row names the part of
@@ -32,7 +32,7 @@ The app ranks seven rotations (`web/data/rotations.json`).
 |---|---|---|
 | NASA GPM IMERG daily rain via NASA POWER, 2001 to 2025 | rotation water need, heavy-rain days on bare soil | `src/taupin/weather.py` |
 | NASA SMAP L4 root-zone soil moisture, 252 dates, 2015 to 2025 | check of the POWER wetness input (anomaly r = 0.78) | `src/taupin/smap.py` |
-| NASA POWER (MERRA-2) TSOIL1, GWETROOT, T2M | trap week (soil at 12 °C), field risk features | `src/taupin/fieldrisk.py`, `web/js/power.js` |
+| NASA POWER (MERRA-2) TSOIL1, GWETROOT, T2M | soil temperature, field risk features | `src/taupin/fieldrisk.py`, `web/js/power.js` |
 | NASA HLS v2 (Landsat 8/9 and ESA Sentinel-2), 30 m, 2020 to 2025 | plant cover (NDVI) layer | `src/taupin/fetch_layers.py` |
 | USGS Landsat 8/9 surface temperature, 2016 to 2025 | where the soil warms first | `src/taupin/fetch_layers.py` |
 | AAFC Annual Crop Inventory, 2011 to 2025 (Canada) | crop history per field, preset rotation | `src/taupin/crophist.py` |
@@ -40,7 +40,6 @@ The app ranks seven rotations (`web/data/rotations.json`).
 | IRDA and AAFC CanSIS soil maps (Quebec fields) | soil units, organic matter | `src/taupin/soil.py`, `src/taupin/organic.py` |
 | ISRIC SoilGrids 2.0, 250 m, worldwide | organic matter for any picked field | `web/js/organic.js` |
 | AWS Terrain Tiles, worldwide | terrain where there is no lidar | `web/js/build.js` |
-| RAP Grandes cultures wireworm method | ten trap points, count threshold | `web/js/scout.js` |
 
 ## Models
 
