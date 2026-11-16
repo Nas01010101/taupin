@@ -10,6 +10,7 @@ import * as custom from './custom.js';
 import * as hist from './history.js';
 import { makeRules, scenariosFor } from './engine.js';
 import * as sw from './swui.js';
+import * as next from './nextcrops.js';
 import { fieldRanking, soilLightCheck, soilLightNote } from './fieldrisk.js';
 import { parseCoords, coordText, fetchField } from './power.js';
 import { formatAnswer, preprocess } from './classify.js';
@@ -193,7 +194,20 @@ function renderSoilWater(view) {
   $('#sw-table').innerHTML = sw.tableHTML(ranked, byId, names, o.current, impact.length && o.chosen.includes('soil') ? Object.fromEntries(impact.map(r => [r.id, r])) : null);
   // The crop before 2026 (farmer's history, else the baked record, else the default start) counts for the rotation conflicts.
   $('#sw-cards').innerHTML = sw.cardsHTML(ranked, byId, { names, texts, current: o.current, cropData: D.crops, sequences, chosen: o.chosen, prior });
+  renderNext(view, clim, prior);
   $('#sw-how').innerHTML = sw.climateHTML(clim, D.crops, D.weather, state.own ? coordText(state.own) : D.field.site.name);
+}
+
+// What next on this field (nextcrops.js): three-year plans from where the field actually is,
+// against keeping the current rotation.
+function renderNext(view, clim, prior) {
+  const o = state.sw, current = seqOf(o.current), start = histStart();
+  if (!current || !rules) { $('#sw-next').innerHTML = ''; return; }
+  const source = start ? 'your crop record' : D.risk.history ? `the AAFC crop inventory for ${D.field.site.name}` : 'no record: the default start of three sod years';
+  try {
+    const p = next.plan({ risk: D.risk, rules, zone: view.zone, start, prior, current, cropData: D.crops, clim, chosen: o.chosen, tillage: o.tillage });
+    $('#sw-next').innerHTML = next.planHTML(p, { cropData: D.crops, startYear: D.risk.start_year, source, rotationName: allNames()[o.current] ?? o.current });
+  } catch (e) { $('#sw-next').innerHTML = `<p class="small muted">The next-crops plan could not be computed (${ui.esc(e.message)}).</p>`; }
 }
 
 async function loadOwn(site) {

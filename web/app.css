@@ -262,3 +262,15 @@ details.how summary { cursor: pointer; color: var(--accent); margin-bottom: var(
 .hist-year { display: grid; gap: 2px; }
 .hist-year select, .hist-row input { font: inherit; min-height: 2.25rem; }
 .hist-year small { opacity: .75; }
+
+/* What next on this field (nextcrops.js) */
+.nx { margin: var(--s3) 0; padding: var(--s3); border: 1px solid var(--muted); border-radius: 8px; }
+.nx h3 { margin-top: 0; }
+.nx-crop { display: inline-block; padding: 0 var(--s1); border-radius: 4px; border: 1px solid var(--muted); border-left-width: 6px; }
+.nx-crop.nx-low { border-left-color: var(--low); }
+.nx-crop.nx-mod { border-left-color: var(--mod); }
+.nx-crop.nx-high { border-left-color: var(--high); }
+.nx-verdict { padding: var(--s2); border-radius: 6px; background: var(--surface); }
+.nx-list { padding-left: 0; list-style: none; }
+.nx-opt { margin: var(--s2) 0; }
+.nx-opt ul { margin: var(--s1) 0 0; }
