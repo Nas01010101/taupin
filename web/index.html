@@ -7,7 +7,7 @@
 <meta name="description" content="Identify a soil insect from a photo, see when to set bait traps from NASA POWER soil temperature, and compare four crop rotations on soil loss, water, nitrogen and pests with NASA GPM rain and SMAP soil moisture.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#15160f">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' data: blob: https://power.larc.nasa.gov; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-wkIUCUJPDZDnCpTEaHsG3Is67Qva9sI5aoU4Ek8Vzx4='; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org https://agriculture.canada.ca; connect-src 'self' data: blob: https://power.larc.nasa.gov https://datacube.services.geo.ca https://canelevation-dem.s3.ca-central-1.amazonaws.com https://s3.amazonaws.com https://agriculture.canada.ca; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -91,7 +91,21 @@
 
     <section id="sec-own" aria-labelledby="h-own">
       <h2 id="h-own">1. Your field</h2>
-      <p class="lede">Enter the field's coordinates. The page sends these two numbers to NASA POWER (power.larc.nasa.gov) and nothing else, then keeps the answer on this device for use without a network.</p>
+      <p class="lede">Tap your field on the map: the page builds its 3D model, trap points, crop history and pest table from lidar, NASA and crop-map data, and keeps it on this device. Or enter the coordinates for the NASA dates only.</p>
+      <div class="pick-wrap">
+        <button type="button" id="pick-open" class="pick-btn">Pick your field on a map</button>
+        <div id="pick" hidden>
+          <p class="small">Zoom to your farm and tap inside your field. Colours show last year's crops (AAFC crop inventory, Canada). The square is what will be modelled.</p>
+          <div id="pick-map" class="pick-map" role="application" aria-label="Map: tap your field"></div>
+          <div class="own-btn">
+            <button type="button" id="pick-build" class="pick-btn" disabled>Build my 3D field here</button>
+            <button type="button" class="ghost" id="pick-here">Go to this device's position</button>
+            <button type="button" class="ghost" id="pick-close">Close the map</button>
+          </div>
+          <p id="pick-status" class="small" aria-live="polite"></p>
+        </div>
+      </div>
+      <p class="small">Coordinates only: the page sends these two numbers to NASA POWER (power.larc.nasa.gov) and nothing else, then keeps the answer on this device for use without a network.</p>
       <form id="own" class="rank-form" novalidate>
         <label class="small">Latitude <input id="own-lat" inputmode="decimal" autocomplete="off" placeholder="45.5013"></label>
         <label class="small">Longitude <input id="own-lon" inputmode="decimal" autocomplete="off" placeholder="-73.7651"></label>

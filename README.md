@@ -28,6 +28,16 @@ Built for NASA Space Apps 2026. Taupin is French for wireworm and click beetle.
   run in the browser as int8 ONNX. A photo becomes a dated pin on the 3D field; it tints the ground
   around the pin and reweights the rotation scores. Below 0.892 confidence the answer is "unclear"
   and the photo is meant for the lab.
+- **Your own field, one tap.** "Pick your field on a map" opens OpenStreetMap with the AAFC crop map
+  on top. A tap builds the 3D field for a 600 m square at that point, in the browser and in about
+  6 s on a normal connection: NRCan HRDEM lidar (terrain and tree heights) is read straight from
+  its cloud-optimized GeoTIFFs with HTTP range requests (about 2 MB, only the tiles needed), with
+  AWS Terrain Tiles as a fallback where there is no lidar (outside Canada). Then come wetness
+  index, scouting zones and 10 traps (JS ports of `terrain.py` and `zones.py`, checked against the
+  Python output), plus 15 years of AAFC crop history over the field. The crop history sets the
+  rotation, the forage years and the years since sod, so the pest table (a JS port of the
+  engine, reproducing `risk.json` exactly) is computed for this field instead of assuming 3 years
+  of sod. The field is kept on the device (about 210 kB) and opens with `?field=mine`.
 
 ## Coverage: North America
 

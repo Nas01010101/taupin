@@ -17,6 +17,9 @@ import * as memoryui from './memoryui.js';
 import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
 import { nearest, startField, km } from './fields.js';
+import { buildField, packField, unpackField } from './build.js';
+import { riskMatrix } from './engine.js';
+import { openPicker, centerPicker } from './picker.js';
 
 const $ = s => document.querySelector(s);
 const getJSON = async p => { const r = await fetch(p); if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`); return r.json(); };
@@ -85,6 +88,9 @@ const LIGHT_SOIL_NOTE = 'Soil map units in this parcel are clay loam and muck, s
 
 const OWN_SOIL_NOTE = 'The app has no soil map for this place: tick the box if the field is sand or sandy loam.';
 const OWN_KEY = 'taupin-own', FIELD_KEY = 'taupin-field';   // FIELD_KEY: the last field picked here
+// BUILT_KEY: the field the farmer built by tapping the map (build.js), kept on this device.
+const BUILT_KEY = 'taupin-built', MINE = 'mine';
+function loadBuilt() { try { const r = JSON.parse(localStorage.getItem(BUILT_KEY)); return r?.field ? r : null; } catch { return null; } }
 
 // A baked field near the typed position: say so, with a link that opens it.
 function nearHint(site) {
@@ -107,7 +113,7 @@ function useField(own, note = '') {
     ? `Showing ${coordText(own.site)}, fetched ${own.fetched}. NASA POWER is modelled on a grid of about 50 km, so neighbouring fields get the same values. `
       + (own.soil.always_warm ? 'The soil here is already at 12 °C on 1 March, so the date rule, written for Quebec springs, says nothing useful. ' : '')
       + (own.weather ? 'The rotation water columns use this field\'s GPM IMERG rain. ' : 'NASA POWER sent no IMERG rain, so the rotation water columns are the demo field\'s. ')
-      + (D.fieldId ? `The 3D field and trap points are ${D.field.site.name}, baked from lidar, satellite and crop maps.` : 'The 3D field, the trap points and the pest levels are still the demo square.')
+      + (D.fieldId ? `The 3D field and trap points are ${D.field.site.name}, ${D.field.site.built ? 'built on this device from lidar and crop maps' : 'baked from lidar, satellite and crop maps'}.` : 'The 3D field, the trap points and the pest levels are still the demo square.')
       + nearHint(own.site)
     : `Showing ${D.fieldId ? '' : 'the demo field, '}${D.field.site.name}.`);
   renderPanel(); renderRank();
@@ -150,6 +156,41 @@ async function loadOwn(site) {
     useField(own);
   } catch (e) {
     $('#own-status').textContent = `No dates for ${coordText(site)}: ${e instanceof TypeError ? 'NASA POWER could not be reached' : e.message}. The page still shows ${state.own ? coordText(state.own) : D.fieldId ? `${D.field.site.name} with the demo park's NASA dates` : 'the demo field'}.`;
+  }
+}
+
+// ---- Pick a field on the map and build it here (picker.js, build.js)
+let pickSite = null;
+async function openFieldMap() {
+  const c = state.own ?? D.field.site;
+  $('#pick-status').textContent = 'Loading the map…';
+  try {
+    await openPicker($('#pick'), { center: { lat: c.lat, lon: c.lon, zoom: 15 }, onPick: s => {
+      pickSite = s; $('#pick-build').disabled = false;
+      $('#pick-status').textContent = `Picked ${coordText(s)}. Build the 3D field here: about 2 MB to download once, then it stays on this device.`;
+    } });
+    $('#pick-open').hidden = true;
+    if (!pickSite) $('#pick-status').textContent = 'Tap inside your field.';
+  } catch (e) { $('#pick-status').textContent = `The map could not load (${e.message}). Type the coordinates below instead.`; }
+}
+
+async function buildHere() {
+  if (!pickSite) return;
+  const btn = $('#pick-build'), st = $('#pick-status');
+  btn.disabled = true;
+  try {
+    const b = await buildField(pickSite, { rotations: D.risk.rotations, startYear: D.risk.start_year, onStep: s => { st.textContent = s; } });
+    const rec = { field: packField(b.field), history: b.history, built: today(), download: b.download };
+    try { localStorage.setItem(BUILT_KEY, JSON.stringify(rec)); localStorage.setItem(FIELD_KEY, MINE); } catch {
+      st.textContent = 'This browser blocks site storage, so the field cannot be kept. Allow site data for this page and build again.';
+      btn.disabled = false; return;
+    }
+    st.textContent = `Built: ${b.field.open.area_ha} ha to scout, ${b.field.traps.length} traps. Opening your field…`;
+    const q = new URLSearchParams(location.search); q.set('field', MINE); location.search = q.toString();
+  } catch (e) {
+    console.error(e);
+    st.textContent = `Could not build a field here: ${/fetch|network/i.test(e.message) ? 'a data service could not be reached; try again with a network' : e.message}.`;
+    btn.disabled = false;
   }
 }
 
@@ -405,6 +446,15 @@ function bind() {
     try { localStorage.setItem(FIELD_KEY, b.dataset.field); } catch { /* storage blocked: the URL still carries it */ }
     location.search = q.toString();
   });
+  $('#pick-open').addEventListener('click', openFieldMap);
+  $('#pick-build').addEventListener('click', buildHere);
+  $('#pick-close').addEventListener('click', () => { $('#pick').hidden = true; $('#pick-open').hidden = false; });
+  $('#pick-here').addEventListener('click', () => {
+    if (!navigator.geolocation) { $('#pick-status').textContent = 'This browser gives no position. Zoom the map by hand.'; return; }
+    $('#pick-status').textContent = 'Asking this device for its position…';
+    navigator.geolocation.getCurrentPosition(p => { centerPicker($('#pick'), { lat: p.coords.latitude, lon: p.coords.longitude }, 16); $('#pick-status').textContent = 'Tap inside your field.'; },
+      () => { $('#pick-status').textContent = 'No position from this device. Zoom the map by hand.'; }, { enableHighAccuracy: true, timeout: 15000 });
+  });
   $('#regions').addEventListener('click', e => { const b = e.target.closest('button[data-lat]'); if (b) loadOwn(parseCoords(b.dataset.lat, b.dataset.lon)); });
   $('#own-here').addEventListener('click', () => {
     if (!navigator.geolocation) { $('#own-status').textContent = 'This browser gives no position. Type the coordinates.'; return; }
@@ -459,13 +509,19 @@ function showLayer(key) {
 }
 
 async function main() {
-  const fields = await getJSON('data/fields/index.json').catch(() => []);
+  const baked = await getJSON('data/fields/index.json').catch(() => []), built = DEMO_RUN ? null : loadBuilt();
+  const fields = built ? [{ id: MINE, name: `My field (${built.field.site.lat.toFixed(3)}, ${built.field.site.lon.toFixed(3)})`, lat: built.field.site.lat, lon: built.field.site.lon }, ...baked] : baked;
   // A field fetched earlier comes back from this device's storage, so it also opens with no network.
   let own = null, lastPick = null;
   if (!DEMO_RUN) try { own = JSON.parse(localStorage.getItem(OWN_KEY)); lastPick = localStorage.getItem(FIELD_KEY); } catch { /* blocked or bad JSON */ }
-  const fieldId = DEMO_RUN ? null : startField(fields, location.search, { last: lastPick, site: own?.site }), base = fieldId ? `data/fields/${fieldId}/` : 'data/';
-  const [field, risk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([`${base}field.json`, 'data/risk.json', 'data/soil.json',
-    'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON));
+  const fieldId = DEMO_RUN ? null : startField(fields, location.search, { last: lastPick, site: own?.site });
+  const base = fieldId === MINE ? '' : fieldId ? `data/fields/${fieldId}/` : 'data/';
+  const [field, parkRisk, soil, gallery, model, fieldRisk, crops, rotations, weather, smap] = await Promise.all([
+    fieldId === MINE ? unpackField(built.field) : getJSON(`${base}field.json`),
+    ...['data/risk.json', 'data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json', 'data/crops.json', 'data/rotations.json', 'data/weather.json', 'data/smap.json'].map(getJSON)]);
+  // A built field's pest table comes from its own crop history (engine.js, the rules of engine.py);
+  // the park's table assumes three years of sod.
+  const risk = fieldId === MINE && built.history ? riskMatrix({ rotations: parkRisk.rotations, sources: parkRisk.sources, startYear: parkRisk.start_year, history: built.history }) : parkRisk;
   const views = VIEWS.filter(v => field.layers.some(l => l.key === v.layer));   // the park has no crop map
   D = { field, risk, soil, gallery: gallery.items, metrics: null, model, fieldRisk, crops, rotations, weather, smap, demo: { soil, fieldRisk, weather }, fields, fieldId, views };
   state.sw.current = rotations.default_current in risk.rotations ? rotations.default_current : Object.keys(risk.rotations)[0];

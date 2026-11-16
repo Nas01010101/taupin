@@ -244,7 +244,10 @@ export function createScene(container, field, base = 'data/') {
   renderer.domElement.addEventListener('pointerleave', clearHover);
 
   // ------------------------------------------------------------ load layers, build the mesh
+  // A field built in the browser (build.js) carries each layer's bytes in `buffer`; baked fields
+  // are fetched from base + file.
   const ready = Promise.all(field.layers.map(async l => {
+    if (l.buffer) { data[l.key] = decode(l.buffer, l.encoding); return; }
     const res = await fetch(base + l.file);
     if (!res.ok) throw new Error(`${l.file}: ${res.status}`);
     data[l.key] = decode(await res.arrayBuffer(), l.encoding);
