@@ -109,6 +109,26 @@ no rule for splitting traps between zones.
 Other baked fields (`web/data/fields/`) use the same sources and steps; each `field.json` lists
 its own HRDEM project, dates and sources.
 
+## Field built in the browser
+
+"Pick your field on a map" builds a 600 m field at the tapped point on the device
+(`web/js/picker.js`, `web/js/build.js`); nothing is baked. These sources are read live from the page.
+
+| Item | Source | Licence | Native resolution | Feeds |
+|---|---|---|---|---|
+| Base map for the tap | OpenStreetMap standard tiles, `tile.openstreetmap.org` | Data ODbL, © OpenStreetMap contributors; use under the OSMF Tile Usage Policy | Zoom 0 to 19 | The map the farmer taps; not stored |
+| Crop map over the base map | AAFC Annual Crop Inventory, ArcGIS ImageServer `exportImage`, AAFC colours (`png32`) for the last year, shown from zoom 12 | Open Government Licence - Canada | 30 m | Fields visible by colour before the tap; Canada only |
+| Terrain height, canopy height | NRCan HRDEM 1 m mosaic (`hrdem-mosaic-1m`), DTM and DSM cloud-optimized GeoTIFFs found through the NRCan STAC API (`datacube.services.geo.ca`) and read with HTTP range requests (`web/js/cog.js`), the overview nearest 4 m, sampled onto a 4 m grid | Open Government Licence - Canada | 1 m, read at 4 m | 3D relief, trees (canopy = DSM minus DTM), wetness index, zones, traps |
+| Terrain height where HRDEM has no coverage | AWS Terrain Tiles (Registry of Open Data on AWS, Mapzen/Tilezen `terrarium` PNG tiles, zoom 15, height = R x 256 + G + B / 256 - 32768) | Open data; the attribution required by the underlying sources (USGS 3DEP, NRCan CDEM, SRTM, GMTED, ETOPO1 and others, per the Tilezen attribution list) | About 3 m per pixel at 45 degrees N; source data coarser in many places | 3D relief and wetness index; no tree heights |
+| Crop history over the field | AAFC Annual Crop Inventory 2011 to 2025, ArcGIS ImageServer `exportImage` with raw class codes (`renderingRule` None), 20 x 20 cells over the square, majority class over the field's open ground (`web/js/aci.js`) | Open Government Licence - Canada | 30 m | Previous crops, rotation match, grass or forage years, years since sod, the field's own pest table (`web/js/fieldengine.js`); outside Canada the service answers no data |
+| Soil under the tapped point (United States) | USDA NRCS SSURGO through Soil Data Access (`sdmdataaccess.sc.egov.usda.gov`, `Tabular/post.rest`): the main component of the map unit under the point, surface horizon texture, organic matter, sand and clay (`web/js/soil.js`) | USDA, public domain | Map unit polygons (about 1:12 000 to 1:63 360) | Presets the "Sand or sandy loam" box of the field rank and names the soil; no answer outside the United States |
+| Map library | Leaflet 1.9.4, vendored in `web/vendor/leaflet/`, loaded only when the map opens | BSD 2-Clause | n/a | Map display and tap |
+
+Taupin choices with no source, for a built field: a 600 m square on a 4 m grid centred on the tap;
+lidar is used when under 20 % of the cells are missing; the field is the patch of the tapped crop,
+else farmed ground, else open ground under 12 degrees of slope; sand, loamy sand and sandy loam
+count as light soil. The built field is kept in the browser's local storage only.
+
 ## Photo model
 
 Weights: Meta DINOv2 ViT-S/14 (`timm/vit_small_patch14_dinov2.lvd142m`), Apache-2.0, fine-tuned
