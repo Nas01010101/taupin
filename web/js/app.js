@@ -18,6 +18,7 @@ import { createMapNotes } from './mapnotes.js';
 import * as ui from './ui.js';
 import { nearest, startField, km } from './fields.js';
 import { buildField, packField, unpackField } from './build.js';
+import { soilAt } from './soil.js';
 import { riskMatrix } from './engine.js';
 import { openPicker, centerPicker } from './picker.js';
 
@@ -87,6 +88,11 @@ function renderModelStatus() {
 const LIGHT_SOIL_NOTE = 'Soil map units in this parcel are clay loam and muck, so the sand or sandy loam input is no everywhere and the rank is the same across the parcel.';
 
 const OWN_SOIL_NOTE = 'The app has no soil map for this place: tick the box if the field is sand or sandy loam.';
+// A built field in the United States brings its surface soil from USDA SSURGO (soil.js).
+const soilNote = () => {
+  const s = D.fieldId === MINE ? loadBuilt()?.soilAt : null;
+  return s ? `Soil under the tapped point (USDA SSURGO): ${s.texture.toLowerCase()} (${s.name}), organic matter ${s.om ?? '?'} %, sand ${s.sand ?? '?'} %, clay ${s.clay ?? '?'} %. The box is preset from it; change it if your field differs.` : OWN_SOIL_NOTE;
+};
 const OWN_KEY = 'taupin-own', FIELD_KEY = 'taupin-field';   // FIELD_KEY: the last field picked here
 // BUILT_KEY: the field the farmer built by tapping the map (build.js), kept on this device.
 const BUILT_KEY = 'taupin-built', MINE = 'mine';
@@ -180,7 +186,8 @@ async function buildHere() {
   btn.disabled = true;
   try {
     const b = await buildField(pickSite, { rotations: D.risk.rotations, startYear: D.risk.start_year, onStep: s => { st.textContent = s; } });
-    const rec = { field: packField(b.field), history: b.history, built: today(), download: b.download };
+    st.textContent = 'Looking up the soil (USDA, United States only)…';
+    const rec = { field: packField(b.field), history: b.history, built: today(), download: b.download, soilAt: await soilAt(pickSite.lat, pickSite.lon) };
     try { localStorage.setItem(BUILT_KEY, JSON.stringify(rec)); localStorage.setItem(FIELD_KEY, MINE); } catch {
       st.textContent = 'This browser blocks site storage, so the field cannot be kept. Allow site data for this page and build again.';
       btn.disabled = false; return;
@@ -197,7 +204,7 @@ async function buildHere() {
 function renderRank() {
   const r = rankNow();
   $('#h-rank').textContent = r ? `Which fields to trap first: ${ui.RANK_TEXT[r.rank].toLowerCase()} third for ${r.year}` : 'Which fields to trap first';
-  $('#rank').innerHTML = ui.fieldRankHTML(r, D.model, { lightSoilNote: state.own ? OWN_SOIL_NOTE : LIGHT_SOIL_NOTE });
+  $('#rank').innerHTML = ui.fieldRankHTML(r, D.model, { lightSoilNote: state.own ? soilNote() : LIGHT_SOIL_NOTE });
   $('#record').textContent = recordNow();
 }
 
@@ -528,6 +535,7 @@ async function main() {
   // A baked field brings its crop history: the rotation it follows and its grass/forage years.
   if (field.crops?.rotation in risk.rotations) state.sw.current = field.crops.rotation;
   if (field.crops) { state.forage = field.crops.forage_years_last5; $('#rank-forage').value = state.forage; }
+  if (fieldId === MINE && built.soilAt) { state.light = built.soilAt.light; $('#rank-light').checked = state.light; }
   $('#fields').innerHTML = [...fields, { id: 'demo', name: 'Demo park (Bois-de-Liesse)' }].map(f =>
     `<button type="button" class="seg" data-field="${ui.esc(f.id)}" aria-pressed="${f.id === (fieldId ?? 'demo')}">${ui.esc(f.name)}</button>`).join('');
   $('#crop-hist').innerHTML = ui.cropHistHTML(field.crops, ROTATION_NAMES);

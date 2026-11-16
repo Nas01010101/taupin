@@ -1,9 +1,9 @@
 // Offline copy of the app. Network first so a running server always wins, then the cache, so
 // the installed app opens with no network. Bump CACHE when vendor/ or the shell changes.
-const CACHE = 'taupin-v14';
+const CACHE = 'taupin-v15';
 const SHELL = [
   './', 'index.html', 'app.css', 'nasa.css', 'img/hero.jpg', 'manifest.webmanifest',
-  'js/app.js', 'js/scene.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/engine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'data/fields/index.json',
+  'js/app.js', 'js/scene.js', 'js/layers.js', 'js/model.js', 'js/classify.js', 'js/risk.js', 'js/fieldrisk.js', 'js/ui.js', 'js/scout.js', 'js/power.js', 'js/finds.js', 'js/demo.js', 'js/soilwater.js', 'js/swui.js', 'js/memory.js', 'js/memoryui.js', 'js/mapnotes.js', 'js/fields.js', 'js/geo.js', 'js/cog.js', 'js/terrain.js', 'js/zones.js', 'js/engine.js', 'js/aci.js', 'js/build.js', 'js/picker.js', 'js/soil.js', 'data/fields/index.json',
   'vendor/three/three.module.js', 'vendor/three/three.core.js', 'vendor/three/OrbitControls.js',
   'vendor/ort/ort.wasm.min.mjs', 'vendor/ort/ort-wasm-simd-threaded.mjs', 'vendor/ort/ort-wasm-simd-threaded.wasm',
   'data/field.json', 'data/risk.json', 'data/soil.json', 'data/gallery.json', 'data/risk_model.json', 'data/field_risk.json',
