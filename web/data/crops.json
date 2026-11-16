@@ -102,5 +102,5 @@
   "tillage": {"fall_plow": 1.0, "spring_plow": 0.9, "mulch": 0.6, "no_till": 0.25, "src": "OMAFRA_USLE"},
   "heavy_rain_mm": 25,
   "heavy_rain_note": "a day with 25 mm or more of rain, above 0 C, April to November; the cut-off is this tool's choice, not a published threshold",
-  "rotation_conflicts": [{"after": "buckwheat", "crops": ["soybean", "canola"], "why": "white mould (sclerotinia) affects buckwheat, soybean and canola; OMAFRA advises not to rotate buckwheat with them", "src": "OMAFRA_811_BUCK"}]
+  "rotation_conflicts": [{"after": "buckwheat", "crops": ["soybean", "canola"], "why": "white mould (sclerotinia) affects buckwheat, soybean and canola; OMAFRA advises not to rotate buckwheat with them", "src": "OMAFRA_811_BUCK", "cite": "OMAFRA Publication 811 (2022), Buckwheat"}]
 }

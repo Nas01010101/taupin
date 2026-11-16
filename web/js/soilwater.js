@@ -249,7 +249,7 @@ export function conflicts(cropIds, cropData, prior = []) {
   for (const r of cropData.rotation_conflicts ?? []) {
     for (let i = 1; i < seq.length; i++) {
       if (seq[i - 1] !== r.after || !r.crops.includes(seq[i])) continue;
-      const text = `${name(seq[i])} right after ${name(r.after).toLowerCase()}: ${r.why} [${cropData.sources[r.src] ?? r.src}]`;
+      const text = `${name(seq[i])} right after ${name(r.after).toLowerCase()}: ${r.why} [${r.cite ?? cropData.sources[r.src] ?? r.src}]`;
       if (!out.includes(text)) out.push(text);
     }
   }

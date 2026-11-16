@@ -115,7 +115,7 @@ test('the researched crops: every crop the farmer can enter in the history that 
 test('rotation conflicts: soybean or canola right after buckwheat, the last history year included', () => {
   const c = conflicts(['corn', 'buckwheat', 'soybean', 'wheat', 'corn'], crops);
   assert.equal(c.length, 1);
-  assert.match(c[0], /^Soybean right after buckwheat: white mould .+ \[OMAFRA Publication 811/);
+  assert.match(c[0], /^Soybean right after buckwheat: white mould .+ \[OMAFRA Publication 811 \(2022\), Buckwheat\]$/);
   assert.deepEqual(conflicts(['buckwheat', 'corn', 'soybean', 'wheat', 'corn'], crops), []);
   assert.equal(conflicts(['soybean', 'wheat', 'corn', 'soybean', 'wheat'], crops, ['sod', 'buckwheat']).length, 1);
   assert.equal(conflicts(['canola', 'wheat', 'corn', 'soybean', 'wheat'], crops, ['buckwheat']).length, 1);
